@@ -14,7 +14,18 @@ int main(int argc, char* argv[]) {
   }
 
   if (config_init(argv[1])) {
-    // start emulator
+    io_init();
+
+    OVERLAY_MSG = "Starting emulator...";
+    for (int i = 0; i < (CONFIG_DISPLAY.width * CONFIG_DISPLAY.height); i++) {
+      BITMAP0[i] = i;
+    }
+    io_render();
+
+    while (true) {
+      SDL_KeyCode key;
+      io_pollInput(&key);
+    }
   } else {
     printf("ERROR: Unable to parse config file at '%s'\n", argv[1]);
     return EXIT_FAILURE;

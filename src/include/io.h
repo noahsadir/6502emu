@@ -1,7 +1,7 @@
 /**
- * main.h
+ * io.h
  * 
- * Driver class of emulator.
+ * Handle host-specific I/O functionality.
  * 
  * @author Noah Sadir
  * @date 2023-07-30
@@ -27,23 +27,30 @@
  * SOFTWARE.
  */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef IO_H
+#define IO_H
 
 #include "global.h"
 #include "config.h"
-#include "io.h"
+#include "font.h"
 
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <SDL2/SDL.h>
 
-/**
- * @brief Main entry point of program.
- * 
- * @param argc input arg count
- * @param argv input arg content
- * @return int exit status
- */
-int main(int argc, char* argv[]);
+extern uint32_t* BITMAP0;
+extern uint32_t* BITMAP1;
+extern uint32_t* BITMAP2;
+extern uint32_t* BITMAP3;
+extern char* OVERLAY_MSG;
+
+void io_init();
+int io_pollInput(SDL_KeyCode* key);
+void io_render();
+void io_drawString(char* str, int screen);
+void io_drawChar(char chr, int num, uint32_t* bmp);
+void io_drawScreen(int screen,  uint32_t* pixels);
+void io_drawPixel(int x, int y, int screen, uint32_t color,  uint32_t* pixels);
+void io_kill();
 
 #endif

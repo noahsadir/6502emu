@@ -30,6 +30,13 @@ bool config_init(char* path) {
       token = strtok(NULL, "=");
     }
     free(cfgStr);
+
+    if (CONFIG_DEBUG.shouldDisplayDebugScreen) {
+      CONFIG_DISPLAY.screens = 2;
+    } else {
+      CONFIG_DISPLAY.screens = 1;
+    }
+
     config_print();
     return true;
   } else {
@@ -115,17 +122,23 @@ void config_trimWhitespace(char** strPtr) {
 }
 
 void config_throwInvalidConfig() {
+#if (!SUPPRESS_PRINTF)
   printf("CONFIGURATION ERROR: Invalid config file\n");
+#endif
   exit(1);
 }
 
 void config_throwInvalidConfigArg(char* arg) {
+#if (!SUPPRESS_PRINTF)
   printf("CONFIGURATION ERROR: Invalid argument '%s'\n", arg);
+#endif
   exit(1);
 }
 
 void config_throwInvalidConfigVal(char* arg, char* val) {
+#if (!SUPPRESS_PRINTF)
   printf("CONFIGURATION ERROR: Invalid value '%s' for property '%s'\n", val, arg);
+#endif
   exit(1);
 }
 
@@ -135,7 +148,9 @@ bool config_boolFromString(char* arg, char* val) {
   } else if (!strcmp(val, "false")) {
     return false;
   } else {
+#if (!SUPPRESS_PRINTF)
     printf("CONFIGURATION ERROR: Invalid value '%s' for property '%s'\n", val, arg);
+#endif
     exit(1);
     return false;
   }
