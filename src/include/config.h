@@ -45,7 +45,7 @@ typedef enum {
 } bool;
 
 typedef enum {
-  NES
+  EMU_PLAT_NES
 } PlatformConfig;
 
 typedef struct {

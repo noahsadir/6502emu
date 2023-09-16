@@ -32,12 +32,20 @@
 
 #include "global.h"
 
+#define FILEIO_MAX_COUNT 33
+#define FILEIO_MAX_NAME_SIZE 128
+#define FILEIO_MAX_PATH_SIZE 1024
+
 #if (!SUPPRESS_FILEIO)
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <dirent.h>
 #endif
 
+int fileio_writeStringToFile(char* path, char* value, uint8_t append);
 int fileio_readFileAsString(char* path, char** output);
+int fileio_readFileAsBinary(char* path, uint8_t** output);
+int fileio_listFilesInPath(char* path, char* output[FILEIO_MAX_COUNT]);
 
 #endif

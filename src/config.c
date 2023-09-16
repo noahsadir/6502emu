@@ -47,7 +47,7 @@ bool config_init(char* path) {
 void config_print() {
 #if (!SUPPRESS_PRINTF)
   printf("\nPLATFORM: ");
-  if (CONFIG_PLATFORM == NES) {
+  if (CONFIG_PLATFORM == EMU_PLAT_NES) {
     printf("NES\n");
   } else {
     printf("(unknown)");
@@ -77,7 +77,7 @@ void config_parseSetting(char* line) {
 
   if (!strcmp(arg, "Platform")) {
     if (!strcmp(val, "NES")) {
-      CONFIG_PLATFORM = NES;
+      CONFIG_PLATFORM = EMU_PLAT_NES;
     } else {
       config_throwInvalidConfigVal(arg, val);
     }

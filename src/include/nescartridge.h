@@ -1,10 +1,10 @@
 /**
- * global.h
+ * nescartridge.h
  * 
- * Handle global definitions.
+ * Handle cartridge loading for NES emulation.
  * 
  * @author Noah Sadir
- * @date 2023-07-30
+ * @date 2023-08-02
  * 
  * Copyright (c) 2023 Noah Sadir
  * 
@@ -27,35 +27,58 @@
  * SOFTWARE.
  */
 
-#ifndef GLOBAL_H
-#define GLOBAL_H
+#ifndef NESCARTRIDGE_H
+#define NESCARTRIDGE_H
 
-#define FALSE 0
-#define TRUE  1
+#include "global.h"
+#include "config.h"
+#include "io.h"
 
-// used for removing dependencies
-#define SUPPRESS_PRINTF FALSE
-#define SUPPRESS_FILEIO FALSE
-#define SUPPRESS_CONFIG FALSE
-#define SUPPRESS_64BIT  FALSE
+#include <stdint.h>
 
-#define BIT_FILL_0 0x0
-#define BIT_FILL_1 0x1
-#define BIT_FILL_2 0x3
-#define BIT_FILL_3 0x7
-#define BIT_FILL_4 0xF
-#define BIT_FILL_5 0x1F
-#define BIT_FILL_6 0x3F
-#define BIT_FILL_7 0x7F
-#define BIT_FILL_8 0xFF
+typedef enum {
+  MIRRORING_HORIZONTAL  = 0,
+  MIRRORING_VERTICAL    = 1
+} MirroringType;
 
-#define BIT_MASK_1 0x1
-#define BIT_MASK_2 0x2
-#define BIT_MASK_3 0x4
-#define BIT_MASK_4 0x8
-#define BIT_MASK_5 0x10
-#define BIT_MASK_6 0x20
-#define BIT_MASK_7 0x40
-#define BIT_MASK_8 0x80
+typedef enum {
+  TV_NTSC  = 0,
+  TV_PAL   = 1
+} TVSystem;
+
+typedef struct {
+  bool disassemblyMode;
+  uint8_t prgRomSize;
+  uint8_t chrRomSize;
+  MirroringType mirroringType;
+  bool containsPrgRam;
+  bool containsTrainer;
+  bool ignoreMirroringControl;
+  bool isVSUnisystem;
+  bool isPlayChoice10;
+  uint8_t mapperNumber;
+  uint8_t prgRamSize;
+  TVSystem tvSystem;
+} HeaderINES;
+
+typedef struct {
+  HeaderINES header;
+  uint8_t* trainer;
+  uint8_t* prgRom;
+  uint8_t* chrRom;
+  uint8_t* instRom;
+  uint8_t* pRom;
+} INES;
+
+typedef struct {
+  uint8_t* data;
+  uint32_t bytes;
+} FileBinary;
+
+
+INES nescartridge_loadRom(char* romPath);
+bool nescartridge_isRomFile(char* fileName);
+bool nescartridge_selectRom(char selectedRomPath[FILEIO_MAX_PATH_SIZE]);
+INES nescartridge_parseRom(FileBinary* bin);
 
 #endif

@@ -34,6 +34,7 @@
 #include "config.h"
 #include "font.h"
 
+#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
@@ -43,14 +44,18 @@ extern uint32_t* BITMAP1;
 extern uint32_t* BITMAP2;
 extern uint32_t* BITMAP3;
 extern char* OVERLAY_MSG;
+extern char* PANIC_MSG;
+extern bool PANIC_MODE;
 
 void io_init();
 int io_pollInput(SDL_KeyCode* key);
 void io_render();
+void io_clear();
 void io_drawString(char* str, int screen);
 void io_drawChar(char chr, int num, uint32_t* bmp);
 void io_drawScreen(int screen,  uint32_t* pixels);
 void io_drawPixel(int x, int y, int screen, uint32_t color,  uint32_t* pixels);
+void io_panic(char* str);
 void io_kill();
 
 #endif

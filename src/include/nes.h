@@ -1,7 +1,7 @@
 /**
- * global.h
+ * nes.h
  * 
- * Handle global definitions.
+ * Main controller for NES emulation.
  * 
  * @author Noah Sadir
  * @date 2023-07-30
@@ -27,35 +27,22 @@
  * SOFTWARE.
  */
 
-#ifndef GLOBAL_H
-#define GLOBAL_H
+#ifndef NES_H
+#define NES_H
 
-#define FALSE 0
-#define TRUE  1
+#include "global.h"
+#include "config.h"
+#include "io.h"
+#include "nescartridge.h"
+#include "mos6502.h"
 
-// used for removing dependencies
-#define SUPPRESS_PRINTF FALSE
-#define SUPPRESS_FILEIO FALSE
-#define SUPPRESS_CONFIG FALSE
-#define SUPPRESS_64BIT  FALSE
+#include <stdint.h>
 
-#define BIT_FILL_0 0x0
-#define BIT_FILL_1 0x1
-#define BIT_FILL_2 0x3
-#define BIT_FILL_3 0x7
-#define BIT_FILL_4 0xF
-#define BIT_FILL_5 0x1F
-#define BIT_FILL_6 0x3F
-#define BIT_FILL_7 0x7F
-#define BIT_FILL_8 0xFF
-
-#define BIT_MASK_1 0x1
-#define BIT_MASK_2 0x2
-#define BIT_MASK_3 0x4
-#define BIT_MASK_4 0x8
-#define BIT_MASK_5 0x10
-#define BIT_MASK_6 0x20
-#define BIT_MASK_7 0x40
-#define BIT_MASK_8 0x80
+void nes_init(char* fsRoot);
+void nes_disassemble(char* filePath);
+void nes_configureMemory();
+uint8_t nes_cpuRead(uint16_t addr);
+void nes_cpuWrite(uint16_t addr, uint8_t data);
+void nes_finishedInstruction(uint8_t cycles);
 
 #endif

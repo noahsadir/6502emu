@@ -12,6 +12,8 @@ uint32_t* BITMAP1;
 uint32_t* BITMAP2;
 uint32_t* BITMAP3;
 char* OVERLAY_MSG;
+char* PANIC_MSG;
+bool PANIC_MODE;
 
 SDL_Window* window;
 SDL_Surface* surface;
@@ -29,6 +31,8 @@ void io_init() {
   surface = SDL_GetWindowSurface(window);
 
   OVERLAY_MSG = "";
+  PANIC_MSG = "";
+  PANIC_MODE = false;
   BITMAP0 = malloc(sizeof(uint32_t) * CONFIG_DISPLAY.width * CONFIG_DISPLAY.height);
   BITMAP1 = malloc(sizeof(uint32_t) * CONFIG_DISPLAY.width * CONFIG_DISPLAY.height);
   BITMAP2 = malloc(sizeof(uint32_t) * CONFIG_DISPLAY.width * CONFIG_DISPLAY.height);
@@ -61,7 +65,12 @@ void io_render() {
   uint32_t* pixels = (uint32_t*)surface->pixels;
   SDL_LockSurface(surface);
 
-  if (OVERLAY_MSG[0] != '\0') {
+  if (PANIC_MODE) {
+    for (int i = 0; i < (CONFIG_DISPLAY.width * CONFIG_DISPLAY.height); i++) {
+      BITMAP0[i] = (rand() % 2) ? 0xFFFFFF : 0x000000;
+    }
+    io_drawString(PANIC_MSG, 0);
+  } else {
     io_drawString(OVERLAY_MSG, CONFIG_DISPLAY.screens - 1);
   }
 
@@ -86,15 +95,24 @@ void io_drawString(char* str, int screen) {
     bmp = BITMAP3;
   }
 
+  int charPos = 0;  
+  int charsPerRow = CONFIG_DISPLAY.width / 8;
   for (int i = 0; str[i] != '\0'; i++) {
-    io_drawChar(str[i], i, bmp);
+    if (str[i] == '\n') {
+      charPos = charPos - (charPos % charsPerRow) + charsPerRow;
+    } else if (str[i] == '\t') {
+      charPos += 1;
+    } else {
+      io_drawChar(str[i], charPos, bmp);
+      charPos += 1;
+    }
   }
 }
 
-void io_drawChar(char chr, int num, uint32_t* bmp) {
+void io_drawChar(char chr, int charPos, uint32_t* bmp) {
   int charsPerRow = CONFIG_DISPLAY.width / 8;
-  int startX = (num % charsPerRow) * 8;
-  int startY = (num / charsPerRow) * 8;
+  int startX = (charPos % charsPerRow) * 8;
+  int startY = (charPos / charsPerRow) * 8;
 
   uint64_t charPix = font[chr & 127];
   int8_t shift = 63;
@@ -150,4 +168,41 @@ void io_kill() {
   free(BITMAP1);
   free(BITMAP2);
   free(BITMAP3);
+}
+
+void io_clear() {
+  OVERLAY_MSG = "";
+  uint32_t* bmp;
+
+  for (int screen = 0; screen < CONFIG_DISPLAY.screens; screen++) {
+    if (screen == 0) {
+      bmp = BITMAP0;
+    } else if (screen == 1) {
+      bmp = BITMAP1;
+    } else if (screen == 2) {
+      bmp = BITMAP2;
+    } else if (screen == 3) {
+      bmp = BITMAP3;
+    }
+    for (int i = 0; i < (CONFIG_DISPLAY.width * CONFIG_DISPLAY.height); i += 1) {
+      bmp[i] = 0x000000;
+    }
+  }
+  io_render();
+}
+
+void io_panic(char* str) {
+  PANIC_MODE = true;
+
+  char fullStr[1024];
+  fullStr[0] = '\0';
+  strcat(fullStr, "\n\tpanic!\n\t");
+  strcat(fullStr, str);
+  PANIC_MSG = fullStr;
+
+  while (true) {
+    SDL_KeyCode key;
+    io_pollInput(&key);
+    io_render();
+  }
 }

@@ -33,6 +33,7 @@
 #include "global.h"
 #include "config.h"
 #include "io.h"
+#include "nes.h"
 
 #include <stdio.h>
 #include <stdlib.h>
