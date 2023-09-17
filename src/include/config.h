@@ -65,6 +65,7 @@ typedef struct {
   bool shouldDisplayDebugScreen;
   bool shouldTraceInstructions;
   bool shouldLimitFrequency;
+  bool shouldDebugCPU;
 } DebugConfig;
 
 extern PlatformConfig CONFIG_PLATFORM;

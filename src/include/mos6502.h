@@ -176,10 +176,13 @@ void mos6502_interrupt_reset();
 void mos6502_interrupt_nmi();
 void mos6502_interrupt_irq();
 void mos6502_setflag(CPUStatusFlag flag, uint8_t value);
+uint8_t mos6502_getflag(CPUStatusFlag flag);
 void mos6502_stack_push(uint8_t data);
 uint8_t mos6502_stack_pop();
 uint16_t mos6502_read16(uint16_t addr);
 void mos6502_execute(Bytecode* bytecode);
+uint16_t mos6502_fetchValue(CPUAddressingMode addrMode);
+void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode);
 
 /**
  * @brief Decode an instruction and translate into bytecode

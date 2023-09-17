@@ -66,6 +66,7 @@ void config_print() {
   printf(" - Display debug screen? %s\n", CONFIG_DEBUG.shouldDisplayDebugScreen ? "yes" : "no");
   printf(" - Store instruction trace? %s\n", CONFIG_DEBUG.shouldTraceInstructions ? "yes" : "no");
   printf(" - Limit frequency? %s\n", CONFIG_DEBUG.shouldLimitFrequency ? "yes" : "no");
+  printf(" - Debug CPU? %s\n", CONFIG_DEBUG.shouldDebugCPU ? "yes" : "no");
 
   printf("\n");
 #endif
@@ -99,7 +100,9 @@ void config_parseSetting(char* line) {
     CONFIG_DEBUG.shouldTraceInstructions = config_boolFromString(arg, val);
   } else if (!strcmp(arg, "DEBUG_shouldLimitFrequency")) {
     CONFIG_DEBUG.shouldLimitFrequency = config_boolFromString(arg, val);
-  }else {
+  } else if (!strcmp(arg, "DEBUG_shouldDebugCPU")) {
+    CONFIG_DEBUG.shouldDebugCPU = config_boolFromString(arg, val);
+  } else {
     config_throwInvalidConfigArg(arg);
   }
 }

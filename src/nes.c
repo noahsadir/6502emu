@@ -23,6 +23,8 @@ void nes_init(char* fsRoot) {
       io_pollInput(&key);
       io_render();
     }
+  } else if (CONFIG_DEBUG.shouldDebugCPU) {
+    nes_debugCPU();
   } else {
     mos6502_interrupt_reset();
     while (true) {
@@ -31,6 +33,37 @@ void nes_init(char* fsRoot) {
   }
 
   io_panic("CPU halted unexpectedly.");
+}
+
+void nes_debugCPU() {
+#if (!SUPPRESS_PRINTF)
+  char traceStr[256];
+  char* correctStr;
+  char* nestestLogData;
+  int lineNumber = 1;
+
+  mos6502_interrupt_reset();
+  reg.pc = 0xC000;
+
+  fileio_readFileAsString("./debug/nestest.log", &nestestLogData);
+  
+  mos6502_step(traceStr, &nes_finishedInstruction);
+  correctStr = strtok(nestestLogData, "\n");
+  printf("%05d: %s\n", lineNumber, traceStr);
+
+  while (strncmp(traceStr, correctStr, 73) == 0) {
+    mos6502_step(traceStr, &nes_finishedInstruction);
+    correctStr = strtok(NULL, "\n");
+    lineNumber += 1;
+    printf("%05d: %s\n", lineNumber, traceStr);
+  }
+
+  printf("\nMISMATCH AT LINE %d\n", lineNumber);
+  printf("EXPECTED: `%.73s`\n", correctStr);
+  printf("RECEIVED: `%.73s`\n", traceStr);
+
+  io_panic("CPU fault.");
+#endif
 }
 
 void nes_finishedInstruction(uint8_t cycles) {
@@ -79,5 +112,11 @@ uint8_t nes_cpuRead(uint16_t addr) {
 }
 
 void nes_cpuWrite(uint16_t addr, uint8_t data) {
-
+  if (addr <= 0x0FFF) {
+    addr = addr % 0x0800;
+    memoryMap[addr] = data;
+    memoryMap[addr + 0x0800] = data;
+    memoryMap[addr + 0x1000] = data;
+    memoryMap[addr + 0x1800] = data;
+  }
 }
