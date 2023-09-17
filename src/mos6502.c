@@ -15,10 +15,12 @@ uint8_t(*memRead)(uint16_t);
 
 CPUMnemonic mnemonicTable[0x100];
 CPUAddressingMode addrModeTable[0x100];
+uint8_t cycleTable[0x100];
 char* mnemonicStringTable[80];
 
 void mos6502_init(void(*w)(uint16_t, uint8_t), uint8_t(*r)(uint16_t)) {
   mos6502_configureTables();
+  
   memWrite = w;
   memRead = r;
   memWrite = w;
@@ -41,9 +43,9 @@ void mos6502_step(char* traceStr, void(*c)(uint8_t)) {
     mos6502_generateTrace(traceStr, asmStr, &bytecode);
   }
 
-  mos6502_execute(&bytecode);
+  uint8_t cycles = mos6502_execute(&bytecode);
 
-  c(0);
+  c(cycles);
 }
 
 void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode) {
@@ -296,8 +298,10 @@ void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount
 #endif
 }
 
-void mos6502_execute(Bytecode* bytecode) {
+uint8_t mos6502_execute(Bytecode* bytecode) {
   uint16_t operand = mos6502_fetchValue(bytecode->addressingMode);
+  uint8_t cycles = cycleTable[bytecode->data[0]];
+
   switch (bytecode->mnemonic) {
     case I_ADC: {
       uint16_t m = memRead(operand);
@@ -335,6 +339,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BCC: {
       if (mos6502_getflag(CPUSTAT_CARRY) == 0) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -343,6 +348,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BCS: {
       if (mos6502_getflag(CPUSTAT_CARRY) == 1) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -351,6 +357,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BEQ: {
       if (mos6502_getflag(CPUSTAT_ZERO) == 1) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -367,6 +374,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BMI: {
       if (mos6502_getflag(CPUSTAT_NEGATIVE) == 1) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -375,6 +383,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BNE: {
       if (mos6502_getflag(CPUSTAT_ZERO) == 0) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -383,6 +392,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BPL: {
       if (mos6502_getflag(CPUSTAT_NEGATIVE) == 0) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -400,6 +410,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BVC: {
       if (mos6502_getflag(CPUSTAT_OVERFLOW) == 0) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -408,6 +419,7 @@ void mos6502_execute(Bytecode* bytecode) {
     case I_BVS: {
       if (mos6502_getflag(CPUSTAT_OVERFLOW) == 1) {
         reg.pc = operand;
+        cycles += 1;
       } else {
         reg.pc += bytecode->count;
       }
@@ -1023,6 +1035,7 @@ void mos6502_execute(Bytecode* bytecode) {
     }
     default: break;
   }
+  return cycles;
 }
 
 void mos6502_configureTables() {
@@ -1539,6 +1552,264 @@ void mos6502_configureTables() {
   addrModeTable[0xFD] = AM_ABS_X;
   addrModeTable[0xFE] = AM_ABS_X;
   addrModeTable[0xFF] = AM_ABS_X;
+
+  cycleTable[0x00] = 7;
+  cycleTable[0x01] = 6;
+  cycleTable[0x02] = 0;
+  cycleTable[0x03] = 8;
+  cycleTable[0x04] = 3;
+  cycleTable[0x05] = 3;
+  cycleTable[0x06] = 5;
+  cycleTable[0x07] = 5;
+  cycleTable[0x08] = 3;
+  cycleTable[0x09] = 2;
+  cycleTable[0x0A] = 2;
+  cycleTable[0x0B] = 2;
+  cycleTable[0x0C] = 4;
+  cycleTable[0x0D] = 4;
+  cycleTable[0x0E] = 6;
+  cycleTable[0x0F] = 6;
+  cycleTable[0x10] = 2;
+  cycleTable[0x11] = 5;
+  cycleTable[0x12] = 0;
+  cycleTable[0x13] = 8;
+  cycleTable[0x14] = 4;
+  cycleTable[0x15] = 4;
+  cycleTable[0x16] = 6;
+  cycleTable[0x17] = 6;
+  cycleTable[0x18] = 2;
+  cycleTable[0x19] = 4;
+  cycleTable[0x1A] = 2;
+  cycleTable[0x1B] = 7;
+  cycleTable[0x1C] = 4;
+  cycleTable[0x1D] = 4;
+  cycleTable[0x1E] = 7;
+  cycleTable[0x1F] = 7;
+  cycleTable[0x20] = 6;
+  cycleTable[0x21] = 6;
+  cycleTable[0x22] = 0;
+  cycleTable[0x23] = 8;
+  cycleTable[0x24] = 3;
+  cycleTable[0x25] = 3;
+  cycleTable[0x26] = 5;
+  cycleTable[0x27] = 5;
+  cycleTable[0x28] = 4;
+  cycleTable[0x29] = 2;
+  cycleTable[0x2A] = 2;
+  cycleTable[0x2B] = 2;
+  cycleTable[0x2C] = 4;
+  cycleTable[0x2D] = 4;
+  cycleTable[0x2E] = 6;
+  cycleTable[0x2F] = 6;
+  cycleTable[0x30] = 2;
+  cycleTable[0x31] = 5;
+  cycleTable[0x32] = 0;
+  cycleTable[0x33] = 8;
+  cycleTable[0x34] = 4;
+  cycleTable[0x35] = 4;
+  cycleTable[0x36] = 6;
+  cycleTable[0x37] = 6;
+  cycleTable[0x38] = 2;
+  cycleTable[0x39] = 4;
+  cycleTable[0x3A] = 2;
+  cycleTable[0x3B] = 7;
+  cycleTable[0x3C] = 4;
+  cycleTable[0x3D] = 4;
+  cycleTable[0x3E] = 7;
+  cycleTable[0x3F] = 7;
+  cycleTable[0x40] = 6;
+  cycleTable[0x41] = 6;
+  cycleTable[0x42] = 0;
+  cycleTable[0x43] = 8;
+  cycleTable[0x44] = 3;
+  cycleTable[0x45] = 3;
+  cycleTable[0x46] = 5;
+  cycleTable[0x47] = 5;
+  cycleTable[0x48] = 3;
+  cycleTable[0x49] = 2;
+  cycleTable[0x4A] = 2;
+  cycleTable[0x4B] = 2;
+  cycleTable[0x4C] = 3;
+  cycleTable[0x4D] = 4;
+  cycleTable[0x4E] = 6;
+  cycleTable[0x4F] = 6;
+  cycleTable[0x50] = 2;
+  cycleTable[0x51] = 5;
+  cycleTable[0x52] = 0;
+  cycleTable[0x53] = 8;
+  cycleTable[0x54] = 4;
+  cycleTable[0x55] = 4;
+  cycleTable[0x56] = 6;
+  cycleTable[0x57] = 6;
+  cycleTable[0x58] = 2;
+  cycleTable[0x59] = 4;
+  cycleTable[0x5A] = 2;
+  cycleTable[0x5B] = 7;
+  cycleTable[0x5C] = 4;
+  cycleTable[0x5D] = 4;
+  cycleTable[0x5E] = 7;
+  cycleTable[0x5F] = 7;
+  cycleTable[0x60] = 6;
+  cycleTable[0x61] = 6;
+  cycleTable[0x62] = 0;
+  cycleTable[0x63] = 8;
+  cycleTable[0x64] = 3;
+  cycleTable[0x65] = 3;
+  cycleTable[0x66] = 5;
+  cycleTable[0x67] = 5;
+  cycleTable[0x68] = 4;
+  cycleTable[0x69] = 2;
+  cycleTable[0x6A] = 2;
+  cycleTable[0x6B] = 2;
+  cycleTable[0x6C] = 5;
+  cycleTable[0x6D] = 4;
+  cycleTable[0x6E] = 6;
+  cycleTable[0x6F] = 6;
+  cycleTable[0x70] = 2;
+  cycleTable[0x71] = 5;
+  cycleTable[0x72] = 0;
+  cycleTable[0x73] = 8;
+  cycleTable[0x74] = 4;
+  cycleTable[0x75] = 4;
+  cycleTable[0x76] = 6;
+  cycleTable[0x77] = 6;
+  cycleTable[0x78] = 2;
+  cycleTable[0x79] = 4;
+  cycleTable[0x7A] = 2;
+  cycleTable[0x7B] = 7;
+  cycleTable[0x7C] = 4;
+  cycleTable[0x7D] = 4;
+  cycleTable[0x7E] = 7;
+  cycleTable[0x7F] = 7;
+  cycleTable[0x80] = 2;
+  cycleTable[0x81] = 6;
+  cycleTable[0x82] = 2;
+  cycleTable[0x83] = 6;
+  cycleTable[0x84] = 3;
+  cycleTable[0x85] = 3;
+  cycleTable[0x86] = 3;
+  cycleTable[0x87] = 3;
+  cycleTable[0x88] = 2;
+  cycleTable[0x89] = 2;
+  cycleTable[0x8A] = 2;
+  cycleTable[0x8B] = 2;
+  cycleTable[0x8C] = 4;
+  cycleTable[0x8D] = 4;
+  cycleTable[0x8E] = 4;
+  cycleTable[0x8F] = 4;
+  cycleTable[0x90] = 2;
+  cycleTable[0x91] = 6;
+  cycleTable[0x92] = 0;
+  cycleTable[0x93] = 6;
+  cycleTable[0x94] = 4;
+  cycleTable[0x95] = 4;
+  cycleTable[0x96] = 4;
+  cycleTable[0x97] = 4;
+  cycleTable[0x98] = 2;
+  cycleTable[0x99] = 5;
+  cycleTable[0x9A] = 2;
+  cycleTable[0x9B] = 5;
+  cycleTable[0x9C] = 5;
+  cycleTable[0x9D] = 5;
+  cycleTable[0x9E] = 5;
+  cycleTable[0x9F] = 5;
+  cycleTable[0xA0] = 2;
+  cycleTable[0xA1] = 6;
+  cycleTable[0xA2] = 2;
+  cycleTable[0xA3] = 6;
+  cycleTable[0xA4] = 3;
+  cycleTable[0xA5] = 3;
+  cycleTable[0xA6] = 3;
+  cycleTable[0xA7] = 3;
+  cycleTable[0xA8] = 2;
+  cycleTable[0xA9] = 2;
+  cycleTable[0xAA] = 2;
+  cycleTable[0xAB] = 2;
+  cycleTable[0xAC] = 4;
+  cycleTable[0xAD] = 4;
+  cycleTable[0xAE] = 4;
+  cycleTable[0xAF] = 4;
+  cycleTable[0xB0] = 2;
+  cycleTable[0xB1] = 5;
+  cycleTable[0xB2] = 0;
+  cycleTable[0xB3] = 5;
+  cycleTable[0xB4] = 4;
+  cycleTable[0xB5] = 4;
+  cycleTable[0xB6] = 4;
+  cycleTable[0xB7] = 4;
+  cycleTable[0xB8] = 2;
+  cycleTable[0xB9] = 4;
+  cycleTable[0xBA] = 2;
+  cycleTable[0xBB] = 4;
+  cycleTable[0xBC] = 4;
+  cycleTable[0xBD] = 4;
+  cycleTable[0xBE] = 4;
+  cycleTable[0xBF] = 4;
+  cycleTable[0xC0] = 2;
+  cycleTable[0xC1] = 6;
+  cycleTable[0xC2] = 2;
+  cycleTable[0xC3] = 8;
+  cycleTable[0xC4] = 3;
+  cycleTable[0xC5] = 3;
+  cycleTable[0xC6] = 5;
+  cycleTable[0xC7] = 5;
+  cycleTable[0xC8] = 2;
+  cycleTable[0xC9] = 2;
+  cycleTable[0xCA] = 2;
+  cycleTable[0xCB] = 2;
+  cycleTable[0xCC] = 4;
+  cycleTable[0xCD] = 4;
+  cycleTable[0xCE] = 6;
+  cycleTable[0xCF] = 6;
+  cycleTable[0xD0] = 2;
+  cycleTable[0xD1] = 5;
+  cycleTable[0xD2] = 0;
+  cycleTable[0xD3] = 8;
+  cycleTable[0xD4] = 4;
+  cycleTable[0xD5] = 4;
+  cycleTable[0xD6] = 6;
+  cycleTable[0xD7] = 6;
+  cycleTable[0xD8] = 2;
+  cycleTable[0xD9] = 4;
+  cycleTable[0xDA] = 2;
+  cycleTable[0xDB] = 7;
+  cycleTable[0xDC] = 4;
+  cycleTable[0xDD] = 4;
+  cycleTable[0xDE] = 7;
+  cycleTable[0xDF] = 7;
+  cycleTable[0xE0] = 2;
+  cycleTable[0xE1] = 6;
+  cycleTable[0xE2] = 2;
+  cycleTable[0xE3] = 8;
+  cycleTable[0xE4] = 3;
+  cycleTable[0xE5] = 3;
+  cycleTable[0xE6] = 5;
+  cycleTable[0xE7] = 5;
+  cycleTable[0xE8] = 2;
+  cycleTable[0xE9] = 2;
+  cycleTable[0xEA] = 2;
+  cycleTable[0xEB] = 2;
+  cycleTable[0xEC] = 4;
+  cycleTable[0xED] = 4;
+  cycleTable[0xEE] = 6;
+  cycleTable[0xEF] = 6;
+  cycleTable[0xF0] = 2;
+  cycleTable[0xF1] = 5;
+  cycleTable[0xF2] = 0;
+  cycleTable[0xF3] = 8;
+  cycleTable[0xF4] = 4;
+  cycleTable[0xF5] = 4;
+  cycleTable[0xF6] = 6;
+  cycleTable[0xF7] = 6;
+  cycleTable[0xF8] = 2;
+  cycleTable[0xF9] = 4;
+  cycleTable[0xFA] = 2;
+  cycleTable[0xFB] = 7;
+  cycleTable[0xFC] = 4;
+  cycleTable[0xFD] = 4;
+  cycleTable[0xFE] = 7;
+  cycleTable[0xFF] = 7;
+
 
   mnemonicStringTable[0] = "???";
   mnemonicStringTable[1] = "ADC";

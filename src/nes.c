@@ -9,6 +9,7 @@
 
 INES cartridge;
 uint8_t memoryMap[0xFFFF];
+uint32_t cpuCycles = 0;
 
 void nes_init(char* fsRoot) {
   cartridge = nescartridge_loadRom(fsRoot);
@@ -27,6 +28,7 @@ void nes_init(char* fsRoot) {
     nes_debugCPU();
   } else {
     mos6502_interrupt_reset();
+    cpuCycles += 4;
     while (true) {
       mos6502_step(NULL, &nes_finishedInstruction);
     }
@@ -35,38 +37,9 @@ void nes_init(char* fsRoot) {
   io_panic("CPU halted unexpectedly.");
 }
 
-void nes_debugCPU() {
-#if (!SUPPRESS_PRINTF)
-  char traceStr[256];
-  char* correctStr;
-  char* nestestLogData;
-  int lineNumber = 1;
-
-  mos6502_interrupt_reset();
-  reg.pc = 0xC000;
-
-  fileio_readFileAsString("./debug/nestest.log", &nestestLogData);
-  
-  mos6502_step(traceStr, &nes_finishedInstruction);
-  correctStr = strtok(nestestLogData, "\n");
-  printf("%05d: %s\n", lineNumber, traceStr);
-
-  while (strncmp(traceStr, correctStr, 73) == 0) {
-    mos6502_step(traceStr, &nes_finishedInstruction);
-    correctStr = strtok(NULL, "\n");
-    lineNumber += 1;
-    printf("%05d: %s\n", lineNumber, traceStr);
-  }
-
-  printf("\nMISMATCH AT LINE %d\n", lineNumber);
-  printf("EXPECTED: `%.73s`\n", correctStr);
-  printf("RECEIVED: `%.73s`\n", traceStr);
-
-  io_panic("CPU fault.");
-#endif
-}
-
 void nes_finishedInstruction(uint8_t cycles) {
+  cpuCycles += cycles;
+
   if (CONFIG_DEBUG.shouldDisplayDebugScreen) {
     char regString[128];
     sprintf(regString, 
@@ -74,6 +47,7 @@ void nes_finishedInstruction(uint8_t cycles) {
       reg.a, reg.x, reg.y, reg.s, reg.p, reg.pc);
     OVERLAY_MSG = regString;
   }
+
   SDL_KeyCode key;
   io_pollInput(&key);
   io_render();
@@ -121,7 +95,7 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
   } else if (addr <= 0x3FFF) {
     addr = 0x2000 + (addr % 0x08);
     if (addr == 0x2000) {
-      
+
     } else if (addr == 0x2001) {
       
     } else if (addr == 0x2002) {
@@ -144,4 +118,49 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
   } else if (addr <= 0xFFFF) {
     // cartridge space
   }
+}
+
+void nes_debugCPU() {
+  char traceStr[256];
+  char fileStr[256];
+  char* correctStr;
+  char* nestestLogData;
+  int lineNumber = 1;
+
+  mos6502_interrupt_reset();
+  reg.pc = 0xC000;
+  cpuCycles += 4;
+
+  fileio_readFileAsString("./debug/nestest.log", &nestestLogData);
+  fileio_writeStringToFile("./debug/nestest-gen.log", "", false);
+  mos6502_step(traceStr, &nes_finishedInstruction);
+  correctStr = strtok(nestestLogData, "\n");
+
+#if (!SUPPRESS_PRINTF)
+  printf("%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
+  sprintf(fileStr, "%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
+  fileio_writeStringToFile("./debug/nestest-gen.log", fileStr, true);
+#endif
+
+  while (strncmp(traceStr, correctStr, 73) == 0) {
+    mos6502_step(traceStr, &nes_finishedInstruction);
+    correctStr = strtok(NULL, "\n");
+    lineNumber += 1;
+
+#if (!SUPPRESS_PRINTF)
+    printf("%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
+    sprintf(fileStr, "%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
+    fileio_writeStringToFile("./debug/nestest-gen.log", fileStr, true);
+#endif
+
+  }
+
+#if (!SUPPRESS_PRINTF)
+  printf("\nMISMATCH AT LINE %d\n", lineNumber);
+  printf("EXPECTED: `%.73s`\n", correctStr);
+  printf("RECEIVED: `%.73s`\n", traceStr);
+#endif
+
+  io_panic("CPU fault.");
+
 }
