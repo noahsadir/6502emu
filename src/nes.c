@@ -112,11 +112,36 @@ uint8_t nes_cpuRead(uint16_t addr) {
 }
 
 void nes_cpuWrite(uint16_t addr, uint8_t data) {
-  if (addr <= 0x0FFF) {
+  if (addr <= 0x1FFF) {
     addr = addr % 0x0800;
     memoryMap[addr] = data;
     memoryMap[addr + 0x0800] = data;
     memoryMap[addr + 0x1000] = data;
     memoryMap[addr + 0x1800] = data;
+  } else if (addr <= 0x3FFF) {
+    addr = 0x2000 + (addr % 0x08);
+    if (addr == 0x2000) {
+      
+    } else if (addr == 0x2001) {
+      
+    } else if (addr == 0x2002) {
+      
+    } else if (addr == 0x2003) {
+      
+    } else if (addr == 0x2004) {
+      
+    } else if (addr == 0x2005) {
+      
+    } else if (addr == 0x2006) {
+      
+    } else if (addr == 0x2007) {
+      
+    }
+  } else if (addr <= 0x4017) {
+
+  } else if (addr <= 0x401F) {
+    return;
+  } else if (addr <= 0xFFFF) {
+    // cartridge space
   }
 }

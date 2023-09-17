@@ -759,39 +759,124 @@ void mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_ALR: {
-      
+      uint16_t m = memRead(operand);
+      reg.a = reg.a & m;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      uint8_t val = (bytecode->addressingMode == AM_ACCUMULATOR) ? reg.a : memRead(operand);
+      mos6502_setflag(CPUSTAT_CARRY, (val & BIT_MASK_1) != 0);
+      val >>= 1;
+      mos6502_setflag(CPUSTAT_ZERO, val == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (val & BIT_MASK_8) != 0);
+      if (bytecode->addressingMode == AM_ACCUMULATOR) {
+        reg.a = val;
+      } else {
+        memWrite(operand, val);
+      }
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_ANC: {
-
+      uint16_t m = memRead(operand);
+      reg.a = reg.a & m;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      mos6502_setflag(CPUSTAT_CARRY, (reg.a & BIT_MASK_8) != 0);
       break;
     }
     case I_ILL_ANC2: {
-
+      uint16_t m = memRead(operand);
+      reg.a = reg.a & m;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      mos6502_setflag(CPUSTAT_CARRY, (reg.a & BIT_MASK_8) != 0);
       break;
     }
     case I_ILL_ANE: {
-
+      
       break;
     }
     case I_ILL_ARR: {
-
+      uint16_t m = memRead(operand);
+      reg.a = reg.a & m;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      uint8_t val = (bytecode->addressingMode == AM_ACCUMULATOR) ? reg.a : memRead(operand);
+      uint8_t oldCarry = mos6502_getflag(CPUSTAT_CARRY);
+      mos6502_setflag(CPUSTAT_CARRY, (val & BIT_MASK_1) != 0);
+      val >>= 1;
+      val |= (oldCarry << 7);
+      mos6502_setflag(CPUSTAT_ZERO, val == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (val & BIT_MASK_8) != 0);
+      if (bytecode->addressingMode == AM_ACCUMULATOR) {
+        reg.a = val;
+      } else {
+        memWrite(operand, val);
+      }
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_DCP: {
+      uint8_t m = memRead(operand);
+      m -= 1;
+      memWrite(operand, m);
+      mos6502_setflag(CPUSTAT_ZERO, m == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (m & BIT_MASK_8) > 0);
+      m = memRead(operand);
+      int8_t val = (int8_t)reg.a - (int8_t)m;
 
+      if (reg.a < m) {
+        mos6502_setflag(CPUSTAT_ZERO, 0);
+        mos6502_setflag(CPUSTAT_CARRY, 0);
+      } else if (reg.a == m) {
+        mos6502_setflag(CPUSTAT_ZERO, 1);
+        mos6502_setflag(CPUSTAT_CARRY, 1);
+      } else if (reg.a > m) {
+        mos6502_setflag(CPUSTAT_ZERO, 0);
+        mos6502_setflag(CPUSTAT_CARRY, 1);
+      }
+
+      mos6502_setflag(CPUSTAT_NEGATIVE, val < 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_ISC: {
-
+      uint8_t m = memRead(operand);
+      m += 1;
+      memWrite(operand, m);
+      mos6502_setflag(CPUSTAT_ZERO, m == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (m & BIT_MASK_8) > 0);
+      m = ~memRead(operand);
+      uint16_t sum = reg.a + m + mos6502_getflag(CPUSTAT_CARRY);
+      mos6502_setflag(CPUSTAT_CARRY, sum > 0xFF);
+      mos6502_setflag(CPUSTAT_OVERFLOW, (reg.a ^ sum) & (m ^ sum) & 0x80);
+      reg.a = sum;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_LAS: {
-
+      uint8_t m = memRead(operand);
+      reg.a = m;
+      mos6502_setflag(CPUSTAT_ZERO, m == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (m & BIT_MASK_8) > 0);
+      reg.x = reg.s;
+      mos6502_setflag(CPUSTAT_ZERO, reg.s == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.s & BIT_MASK_8) != 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_LAX: {
-
+      uint8_t m = memRead(operand);
+      reg.a = m;
+      mos6502_setflag(CPUSTAT_ZERO, m == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (m & BIT_MASK_8) > 0);
+      m = memRead(operand);
+      reg.x = m;
+      mos6502_setflag(CPUSTAT_ZERO, m == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (m & BIT_MASK_8) > 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_LXA: {
@@ -799,19 +884,71 @@ void mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_RLA: {
-
+      uint8_t val = (bytecode->addressingMode == AM_ACCUMULATOR) ? reg.a : memRead(operand);
+      uint8_t oldCarry = mos6502_getflag(CPUSTAT_CARRY);
+      mos6502_setflag(CPUSTAT_CARRY, (val & BIT_MASK_8) != 0);
+      val <<= 1;
+      val |= oldCarry;
+      mos6502_setflag(CPUSTAT_ZERO, val == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (val & BIT_MASK_8) != 0);
+      if (bytecode->addressingMode == AM_ACCUMULATOR) {
+        reg.a = val;
+      } else {
+        memWrite(operand, val);
+      }
+      uint16_t m = memRead(operand);
+      reg.a = reg.a & m;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_RRA: {
-
+      uint8_t val = (bytecode->addressingMode == AM_ACCUMULATOR) ? reg.a : memRead(operand);
+      uint8_t oldCarry = mos6502_getflag(CPUSTAT_CARRY);
+      mos6502_setflag(CPUSTAT_CARRY, (val & BIT_MASK_1) != 0);
+      val >>= 1;
+      val |= (oldCarry << 7);
+      mos6502_setflag(CPUSTAT_ZERO, val == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (val & BIT_MASK_8) != 0);
+      if (bytecode->addressingMode == AM_ACCUMULATOR) {
+        reg.a = val;
+      } else {
+        memWrite(operand, val);
+      }
+      uint16_t m = memRead(operand);
+      uint16_t sum = reg.a + m + mos6502_getflag(CPUSTAT_CARRY);
+      mos6502_setflag(CPUSTAT_CARRY, sum > 0xFF);
+      mos6502_setflag(CPUSTAT_OVERFLOW, (reg.a ^ sum) & (m ^ sum) & 0x80);
+      reg.a = sum;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_SAX: {
-
+      memWrite(operand, reg.a & reg.x);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_SBX: {
+      uint8_t m = memRead(operand);
+      int8_t val = (int8_t)reg.a - (int8_t)m;
+      reg.x -= 1;
 
+      if (reg.a < m) {
+        mos6502_setflag(CPUSTAT_ZERO, 0);
+        mos6502_setflag(CPUSTAT_CARRY, 0);
+      } else if (reg.a == m) {
+        mos6502_setflag(CPUSTAT_ZERO, 1);
+        mos6502_setflag(CPUSTAT_CARRY, 1);
+      } else if (reg.a > m) {
+        mos6502_setflag(CPUSTAT_ZERO, 0);
+        mos6502_setflag(CPUSTAT_CARRY, 1);
+      }
+
+      mos6502_setflag(CPUSTAT_NEGATIVE, val < 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_SHA: {
@@ -827,11 +964,39 @@ void mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_SLO: {
-
+      uint8_t val = (bytecode->addressingMode == AM_ACCUMULATOR) ? reg.a : memRead(operand);
+      mos6502_setflag(CPUSTAT_CARRY, (val & BIT_MASK_8) != 0);
+      val <<= 1;
+      mos6502_setflag(CPUSTAT_ZERO, val == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (val & BIT_MASK_8) != 0);
+      if (bytecode->addressingMode == AM_ACCUMULATOR) {
+        reg.a = val;
+      } else {
+        memWrite(operand, val);
+      }
+      uint16_t m = memRead(operand);
+      reg.a = reg.a | m;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_SRE: {
-
+      uint8_t val = (bytecode->addressingMode == AM_ACCUMULATOR) ? reg.a : memRead(operand);
+      mos6502_setflag(CPUSTAT_CARRY, (val & BIT_MASK_1) != 0);
+      val >>= 1;
+      mos6502_setflag(CPUSTAT_ZERO, val == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (val & BIT_MASK_8) != 0);
+      if (bytecode->addressingMode == AM_ACCUMULATOR) {
+        reg.a = val;
+      } else {
+        memWrite(operand, val);
+      }
+      uint16_t m = memRead(operand);
+      reg.a = reg.a ^ m;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_TAS: {
@@ -839,15 +1004,21 @@ void mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_USBC: {
-
+      uint8_t m = ~memRead(operand);
+      uint16_t sum = reg.a + m + mos6502_getflag(CPUSTAT_CARRY);
+      mos6502_setflag(CPUSTAT_CARRY, sum > 0xFF);
+      mos6502_setflag(CPUSTAT_OVERFLOW, (reg.a ^ sum) & (m ^ sum) & 0x80);
+      reg.a = sum;
+      mos6502_setflag(CPUSTAT_ZERO, reg.a == 0);
+      mos6502_setflag(CPUSTAT_NEGATIVE, (reg.a & BIT_MASK_8) != 0);
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_NOP: {
-
+      reg.pc += bytecode->count;
       break;
     }
     case I_ILL_JAM: {
-
       break;
     }
     default: break;
@@ -874,8 +1045,8 @@ void mos6502_configureTables() {
   mnemonicTable[0x10] = I_BPL;
   mnemonicTable[0x11] = I_ORA;
   mnemonicTable[0x12] = I_ILL_JAM;
-  mnemonicTable[0x13] = I_ILL_RLA;
-  mnemonicTable[0x14] = I_ILL_RLA;
+  mnemonicTable[0x13] = I_ILL_SLO;
+  mnemonicTable[0x14] = I_ILL_NOP;
   mnemonicTable[0x15] = I_ORA;
   mnemonicTable[0x16] = I_ASL;
   mnemonicTable[0x17] = I_ILL_SLO;
@@ -1432,7 +1603,7 @@ void mos6502_configureTables() {
   mnemonicStringTable[60] = "*ANE";
   mnemonicStringTable[61] = "*ARR";
   mnemonicStringTable[62] = "*DCP";
-  mnemonicStringTable[63] = "*ISC";
+  mnemonicStringTable[63] = "*ISB";
   mnemonicStringTable[64] = "*LAS";
   mnemonicStringTable[65] = "*LAX";
   mnemonicStringTable[66] = "*LXA";
