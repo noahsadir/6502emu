@@ -102,22 +102,22 @@ bool nescartridge_selectRom(char selectedRomPath[FILEIO_MAX_PATH_SIZE]) {
     }
   }
 
-  SDL_KeyCode key = SDLK_0;
+  Keyboard key = K_ZERO;
   int selectedIndex = 0;
   bool keyPressed = false;
   bool disassembleActivated = false;
-  while (key != SDLK_RETURN) {
+  while (key != K_RETURN) {
     if (io_pollInput(&key) == 1) {
       keyPressed = true;
     } else if (io_pollInput(&key) == 0) {
       keyPressed = false;
     }
 
-    if (keyPressed && key == SDLK_UP && selectedIndex > 0) {
+    if (keyPressed && key == K_UP && selectedIndex > 0) {
       selectedIndex -= 1;
-    } else if (keyPressed && key == SDLK_DOWN && selectedIndex < romCount - 1) {
+    } else if (keyPressed && key == K_DOWN && selectedIndex < romCount - 1) {
       selectedIndex += 1;
-    } else if (keyPressed && key == SDLK_d) {
+    } else if (keyPressed && key == K_D) {
       disassembleActivated = !disassembleActivated;
     }
 

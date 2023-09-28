@@ -33,6 +33,10 @@
 #define FALSE 0
 #define TRUE  1
 
+#define SDL2 0
+
+#define IO_LIBRARY SDL2
+
 // used for removing dependencies
 #define SUPPRESS_PRINTF FALSE
 #define SUPPRESS_FILEIO FALSE

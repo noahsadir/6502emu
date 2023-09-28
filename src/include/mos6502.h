@@ -163,8 +163,9 @@ typedef struct {
 } Bytecode;
 
 typedef struct {
-  Bytecode* bytecodes;
+  Bytecode bytecodes[65536];
   uint16_t addrMap[65536];
+  bool cacheMap[65536];
   uint16_t bytecodeCount;
 } BytecodeProgram;
 

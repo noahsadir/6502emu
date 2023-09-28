@@ -23,61 +23,65 @@ void nes_init(char* fsRoot) {
     nes_disassemble("./debug/dasm.s");
     OVERLAY_MSG = "Dissasembly successful.";
     while (true) {
-      SDL_KeyCode key;
+      Keyboard key;
       io_pollInput(&key);
       io_render();
     }
   } else if (CONFIG_DEBUG.shouldDebugCPU) {
     nes_debugCPU();
   } else {
-    mos6502_interrupt_reset();
-    cpuCycles += 4;
-    gettimeofday(&t1, 0);
-    uint32_t elapsed = 0;
-    uint32_t cyclesPerInterval = CONFIG_CPU.frequency / INTERVALS_PER_SEC;
-    int32_t realUs = 0;
-    uint32_t intervals = 0;
-    char outputStr[512];
-    while (true) {
-      // perform desired number of cpu cycles per ms
-      while (cpuCycles < cyclesPerInterval) {
-        mos6502_step(NULL, &nes_finishedInstruction);
-      }
-
-      // update metrics every second
-      if (intervals == INTERVALS_PER_SEC) {
-        nes_generateMetrics(outputStr);
-        realFreq = 0;
-        intervals = 0;
-      }
-
-      // perform I/O updates every interval
-      if (realUs > TIMING_INTERVAL) {
-        SDL_KeyCode key;
-        io_pollInput(&key);
-        io_render();
-        realUs -= TIMING_INTERVAL;
-        intervals += 1;
-      }
-
-      // delay if necessary
-      gettimeofday(&t2, 0);
-      elapsed = ((t2.tv_sec - t1.tv_sec) * 1000000) + t2.tv_usec - t1.tv_usec;
-      if (CONFIG_DEBUG.shouldLimitFrequency) {
-        usleep(elapsed < TIMING_INTERVAL ? usleep(TIMING_INTERVAL - elapsed) : 0);
-      }
-
-      // perform time-related calculations
-      gettimeofday(&t2, 0);
-      elapsed = ((t2.tv_sec - t1.tv_sec) * 1000000) + t2.tv_usec - t1.tv_usec;
-      realUs += elapsed;
-      realFreq += cpuCycles;
-      cpuCycles -= cyclesPerInterval;
-      gettimeofday(&t1, 0);
-    }
+    nes_start();
   }
 
   io_panic("CPU halted unexpectedly.");
+}
+
+void nes_start() {
+  mos6502_interrupt_reset();
+  cpuCycles += 4;
+  gettimeofday(&t1, 0);
+  uint32_t elapsed = 0;
+  uint32_t cyclesPerInterval = CONFIG_CPU.frequency / INTERVALS_PER_SEC;
+  int32_t realUs = 0;
+  uint32_t intervals = 0;
+  char outputStr[512];
+  while (true) {
+    // perform desired number of cpu cycles per ms
+    while (cpuCycles < cyclesPerInterval) {
+      mos6502_step(NULL, &nes_finishedInstruction);
+    }
+
+    // update metrics every second
+    if (intervals == INTERVALS_PER_SEC) {
+      nes_generateMetrics(outputStr);
+      realFreq = 0;
+      intervals = 0;
+    }
+
+    // perform I/O updates every interval
+    if (realUs > TIMING_INTERVAL) {
+      Keyboard key;
+      io_pollInput(&key);
+      io_render();
+      realUs -= TIMING_INTERVAL;
+      intervals += 1;
+    }
+
+    // delay if necessary
+    gettimeofday(&t2, 0);
+    elapsed = ((t2.tv_sec - t1.tv_sec) * 1000000) + t2.tv_usec - t1.tv_usec;
+    if (CONFIG_DEBUG.shouldLimitFrequency) {
+      usleep(elapsed < TIMING_INTERVAL ? usleep(TIMING_INTERVAL - elapsed) : 0);
+    }
+
+    // perform time-related calculations
+    gettimeofday(&t2, 0);
+    elapsed = ((t2.tv_sec - t1.tv_sec) * 1000000) + t2.tv_usec - t1.tv_usec;
+    realUs += elapsed;
+    realFreq += cpuCycles;
+    cpuCycles -= cyclesPerInterval;
+    gettimeofday(&t1, 0);
+  }
 }
 
 void nes_finishedInstruction(uint8_t cycles) {

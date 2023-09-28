@@ -1,10 +1,14 @@
 /**
+ * Implementation of I/O using SDL2
+ * 
  * io.c
  * 
  * @author Noah Sadir
  * @date 2023-07-30
  */
 
+#if (IO_LIBRARY == SDL2)
+#include <SDL2/SDL.h>
 #include "include/io.h"
 
 uint32_t* BITMAP0;
@@ -17,6 +21,63 @@ bool PANIC_MODE;
 
 SDL_Window* window;
 SDL_Surface* surface;
+
+Keyboard convertSDLKeycode(SDL_KeyCode k) {
+  switch (k) {
+    case SDLK_0: return K_ZERO;
+    case SDLK_1: return K_ONE;
+    case SDLK_2: return K_TWO;
+    case SDLK_3: return K_THREE;
+    case SDLK_4: return K_FOUR;
+    case SDLK_5: return K_FIVE;
+    case SDLK_6: return K_SIX;
+    case SDLK_7: return K_SEVEN;
+    case SDLK_8: return K_EIGHT;
+    case SDLK_9: return K_NINE;
+    case SDLK_q: return K_Q;
+    case SDLK_w: return K_W;
+    case SDLK_e: return K_E;
+    case SDLK_r: return K_R;
+    case SDLK_t: return K_T;
+    case SDLK_y: return K_Y;
+    case SDLK_u: return K_U;
+    case SDLK_i: return K_I;
+    case SDLK_o: return K_O;
+    case SDLK_p: return K_P;
+    case SDLK_a: return K_A;
+    case SDLK_s: return K_S;
+    case SDLK_d: return K_D;
+    case SDLK_f: return K_F;
+    case SDLK_g: return K_G;
+    case SDLK_h: return K_H;
+    case SDLK_j: return K_J;
+    case SDLK_k: return K_K;
+    case SDLK_l: return K_L;
+    case SDLK_z: return K_Z;
+    case SDLK_x: return K_X;
+    case SDLK_c: return K_C;
+    case SDLK_v: return K_V;
+    case SDLK_b: return K_B;
+    case SDLK_n: return K_N;
+    case SDLK_m: return K_M;
+    case SDLK_TAB: return K_TAB;
+    case SDLK_BACKSPACE: return K_BACKSP;
+    case SDLK_CAPSLOCK: return K_CAPSLK;
+    case SDLK_RETURN: return K_RETURN;
+    case SDLK_RSHIFT: return K_RSHIFT;
+    case SDLK_LSHIFT: return K_LSHIFT;
+    case SDLK_LCTRL: return K_LCTRL;
+    case SDLK_LALT: return K_LALT;
+    case SDLK_SPACE: return K_SPACE;
+    case SDLK_RALT: return K_RALT;
+    case SDLK_UP: return K_UP;
+    case SDLK_LEFT: return K_LEFT;
+    case SDLK_DOWN: return K_DOWN;
+    case SDLK_RIGHT: return K_RIGHT;
+    default: break;
+  }
+  return K_ESCAPE;
+}
 
 void io_init() {
   SDL_Init(SDL_INIT_VIDEO);
@@ -39,15 +100,15 @@ void io_init() {
   BITMAP3 = malloc(sizeof(uint32_t) * CONFIG_DISPLAY.width * CONFIG_DISPLAY.height);
 }
 
-int io_pollInput(SDL_KeyCode* key) {
+int io_pollInput(Keyboard* key) {
   SDL_Event event;
   if (SDL_PollEvent(&event)) {
 
     if (event.type == SDL_KEYDOWN) {
-      *key = event.key.keysym.sym;
+      *key = convertSDLKeycode(event.key.keysym.sym);
       return 1;
     } else if (event.type == SDL_KEYUP) {
-      *key = event.key.keysym.sym;
+      *key = convertSDLKeycode(event.key.keysym.sym);
       return -1;
     }
 
@@ -201,8 +262,9 @@ void io_panic(char* str) {
   PANIC_MSG = fullStr;
 
   while (true) {
-    SDL_KeyCode key;
+    Keyboard key;
     io_pollInput(&key);
     io_render();
   }
 }
+#endif

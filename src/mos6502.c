@@ -8,7 +8,7 @@
 #include "include/mos6502.h"
 
 CPURegisters reg;
-BytecodeProgram* prgBytecode;
+BytecodeProgram prgBytecode;
 
 void(*memWrite)(uint16_t, uint8_t);
 uint8_t(*memRead)(uint16_t);
@@ -20,7 +20,13 @@ char* mnemonicStringTable[80];
 
 void mos6502_init(void(*w)(uint16_t, uint8_t), uint8_t(*r)(uint16_t)) {
   mos6502_configureTables();
-  
+
+  if (CONFIG_CPU.shouldCacheInstructions) {
+    for (int i = 0; i < 65536; i++) {
+      prgBytecode.cacheMap[i] = false;
+    }
+  }
+
   memWrite = w;
   memRead = r;
   memWrite = w;
@@ -35,17 +41,28 @@ void mos6502_init(void(*w)(uint16_t, uint8_t), uint8_t(*r)(uint16_t)) {
 }
 
 void mos6502_step(char* traceStr, void(*c)(uint8_t)) {
-  Bytecode bytecode;
-  char asmStr[33];
-  mos6502_decode(&bytecode, asmStr, NULL, reg.pc);
-  
-  if (traceStr != NULL) {
-    mos6502_generateTrace(traceStr, asmStr, &bytecode);
+  Bytecode* bytecode = NULL;
+  if (CONFIG_CPU.shouldCacheInstructions) {
+    if (!prgBytecode.cacheMap[reg.pc]) {
+      static Bytecode bc;
+      bytecode = &bc;
+      mos6502_decode(bytecode, NULL, NULL, reg.pc);
+      prgBytecode.bytecodeCount += 1;
+      prgBytecode.bytecodes[prgBytecode.bytecodeCount - 1] = bc;
+      prgBytecode.addrMap[reg.pc] = prgBytecode.bytecodeCount - 1;
+    }
+    bytecode = prgBytecode.bytecodes + prgBytecode.addrMap[reg.pc];
+  } else {
+    Bytecode bc;
+    bytecode = &bc;
+    char asmStr[33];
+    mos6502_decode(bytecode, asmStr, NULL, reg.pc);
+    if (traceStr != NULL) {
+      mos6502_generateTrace(traceStr, asmStr, bytecode);
+    }
   }
 
-  uint8_t cycles = mos6502_execute(&bytecode);
-
-  c(cycles);
+  c(mos6502_execute(bytecode));
 }
 
 void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode) {

@@ -37,7 +37,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <SDL2/SDL.h>
 
 extern uint32_t* BITMAP0;
 extern uint32_t* BITMAP1;
@@ -48,7 +47,7 @@ extern char* PANIC_MSG;
 extern bool PANIC_MODE;
 
 void io_init();
-int io_pollInput(SDL_KeyCode* key);
+int io_pollInput(Keyboard* key);
 void io_render();
 void io_clear();
 void io_drawString(char* str, int screen);

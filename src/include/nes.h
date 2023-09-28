@@ -32,15 +32,16 @@
 
 #include "global.h"
 #include "config.h"
-#include "io.h"
 #include "nescartridge.h"
 #include "mos6502.h"
+#include "io.h"
 
 #include <stdint.h>
 #include <sys/time.h> 
 #include <unistd.h>
 
 void nes_init(char* fsRoot);
+void nes_start();
 void nes_disassemble(char* filePath);
 void nes_configureMemory();
 uint8_t nes_cpuRead(uint16_t addr);
