@@ -33,8 +33,7 @@
 #include "global.h"
 #include "config.h"
 #include "io.h"
-
-#include <stdint.h>
+#include "fileio.h"
 
 typedef enum {
   MIRRORING_HORIZONTAL  = 0,

@@ -36,10 +36,6 @@
 #include "mos6502.h"
 #include "io.h"
 
-#include <stdint.h>
-#include <sys/time.h> 
-#include <unistd.h>
-
 void nes_init(char* fsRoot);
 void nes_start();
 void nes_disassemble(char* filePath);

@@ -35,9 +35,6 @@
 #include "nes.h"
 #include "io.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 /**
  * @brief Main entry point of program.
  * 

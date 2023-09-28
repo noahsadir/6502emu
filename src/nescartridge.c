@@ -7,6 +7,53 @@
 
 #include "include/nescartridge.h"
 
+#if (SUPPRESS_EXTIO)
+#include FALLBACK_NES_ROM_HEADER
+
+INES nescartridge_loadRom(char* fsRoot) {
+  FileBinary bin;
+  bin.bytes = HARDCODED_ROM_LEN;
+  bin.data = hardcoded_rom;
+  INES cartridge = nescartridge_parseRom(&bin);
+  cartridge.header.disassemblyMode = false;
+  return cartridge;
+}
+
+INES nescartridge_parseRom(FileBinary* bin) {
+  INES cartridge;
+  uint32_t pos = 0;
+  if (bin->bytes < 16) io_panic("Unable to parse ROM file.");
+
+  // parse header
+  HeaderINES header;
+  header.prgRomSize = bin->data[4];
+  header.chrRomSize = bin->data[5];
+  uint8_t flags6 = bin->data[6];
+  header.mirroringType = (flags6 & BIT_FILL_1) ? MIRRORING_VERTICAL : MIRRORING_HORIZONTAL;
+  header.containsPrgRam = ((flags6 >> 1) & BIT_FILL_1);
+  header.containsTrainer = ((flags6 >> 2) & BIT_FILL_1);
+  header.ignoreMirroringControl = ((flags6 >> 3) & BIT_FILL_1);
+  header.mapperNumber = (flags6 >> 4) & BIT_FILL_4;
+  uint8_t flags7 = bin->data[7];
+  header.isVSUnisystem = (flags7 & BIT_FILL_1);
+  header.isPlayChoice10 = ((flags7 >> 1) & BIT_FILL_1);
+  header.mapperNumber |= (flags7 & 0xF0);
+  header.prgRamSize = bin->data[8];
+  header.tvSystem = (bin->data[9] & BIT_FILL_1) ? TV_PAL : TV_NTSC;
+  cartridge.header = header;
+
+  cartridge.prgRom = bin->data;
+  cartridge.chrRom = bin->data;
+
+  if (header.containsPrgRam) {
+    io_panic("PRG RAM unsupported.");
+  }
+
+  return cartridge;
+}
+
+#else
+
 INES nescartridge_loadRom(char* fsRoot) {
   char selectedRomPath[FILEIO_MAX_NAME_SIZE];
   selectedRomPath[0] = '\0';
@@ -154,3 +201,5 @@ bool nescartridge_isRomFile(char* fileName) {
   }
   return false;
 } 
+
+#endif

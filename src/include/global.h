@@ -37,14 +37,34 @@
 
 #define IO_LIBRARY SDL2
 
-// used for removing dependencies
-#define SUPPRESS_PRINTF FALSE
-#define SUPPRESS_FILEIO FALSE
-#define SUPPRESS_CONFIG FALSE
+// fallback for if SUPPRESS_EXTIO is set
+#define FALLBACK_PLATFORM EMU_PLAT_NES
+#define FALLBACK_NES_ROM_HEADER "include/roms/nestest.h"
+
+// Remove any I/O-dependent operations from binary
+#define SUPPRESS_EXTIO  FALSE
+#define SUPPRESS_TIMING FALSE
 #define SUPPRESS_64BIT  FALSE
+#define MINIMIZE_MEMORY FALSE
+
+#include <stdint.h>
+#include <string.h>
+
+#if (!SUPPRESS_TIMING)
+#include <sys/time.h>
+#include <unistd.h>
+#endif
+
+#if (!SUPPRESS_EXTIO)
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#endif
 
 #define INTERVALS_PER_SEC 60
 #define TIMING_INTERVAL (1000000 / INTERVALS_PER_SEC)
+
+#define force_inline __attribute__((always_inline)) inline
 
 #define BIT_FILL_0 0x0
 #define BIT_FILL_1 0x1

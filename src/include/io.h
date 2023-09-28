@@ -34,10 +34,6 @@
 #include "config.h"
 #include "font.h"
 
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
-
 extern uint32_t* BITMAP0;
 extern uint32_t* BITMAP1;
 extern uint32_t* BITMAP2;

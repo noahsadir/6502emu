@@ -16,6 +16,7 @@ struct timeval t1, t2;
 
 void nes_init(char* fsRoot) {
   cartridge = nescartridge_loadRom(fsRoot);
+  
   nes_configureMemory();
   mos6502_init(&nes_cpuWrite, &nes_cpuRead);
 
@@ -39,12 +40,21 @@ void nes_init(char* fsRoot) {
 void nes_start() {
   mos6502_interrupt_reset();
   cpuCycles += 4;
-  gettimeofday(&t1, 0);
   uint32_t elapsed = 0;
   uint32_t cyclesPerInterval = CONFIG_CPU.frequency / INTERVALS_PER_SEC;
   int32_t realUs = 0;
   uint32_t intervals = 0;
   char outputStr[512];
+
+#if (SUPPRESS_TIMING)
+  while (true) {
+    mos6502_step(NULL, &nes_finishedInstruction);
+    Keyboard key;
+    io_pollInput(&key);
+    io_render();
+  }
+#else
+  gettimeofday(&t1, 0);
   while (true) {
     // perform desired number of cpu cycles per ms
     while (cpuCycles < cyclesPerInterval) {
@@ -82,6 +92,7 @@ void nes_start() {
     cpuCycles -= cyclesPerInterval;
     gettimeofday(&t1, 0);
   }
+#endif
 }
 
 void nes_finishedInstruction(uint8_t cycles) {
@@ -147,7 +158,7 @@ void nes_disassemble(char* filePath) {
     fileio_writeStringToFile(filePath, "", false);
     while (pc < prgEnd) {
       assemblyLineString[0] = '\0';
-      mos6502_decode(NULL, assemblyLineString, &bytecodeCount, pc);
+      mos6502_decode_external_wrapper(NULL, assemblyLineString, &bytecodeCount, pc);
       strcat(assemblyLineString, "\n");
       fileio_writeStringToFile(filePath, assemblyLineString, true);
       pc += bytecodeCount;
@@ -156,7 +167,8 @@ void nes_disassemble(char* filePath) {
 }
 
 void nes_generateMetrics(char* outputStr) {
-  if (CONFIG_DEBUG.shouldDisplayDebugScreen || CONFIG_DEBUG.shouldDisplayPerformance) {
+#if (!SUPPRESS_EXTIO)
+  if (CONFIG_DEBUG.shouldDisplayPerformance) {
     outputStr[0] = '\0';
     char perfString[128];
     sprintf(perfString, "%.6f MHz\n\n", (double)realFreq / 1000000.0);
@@ -175,6 +187,7 @@ void nes_generateMetrics(char* outputStr) {
 
     OVERLAY_MSG = outputStr;
   }
+#endif
 }
 
 void nes_debugCPU() {
@@ -193,7 +206,7 @@ void nes_debugCPU() {
   mos6502_step(traceStr, &nes_finishedInstruction);
   correctStr = strtok(nestestLogData, "\n");
 
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
   printf("%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
   sprintf(fileStr, "%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
   fileio_writeStringToFile("./debug/nestest-gen.log", fileStr, true);
@@ -204,7 +217,7 @@ void nes_debugCPU() {
     correctStr = strtok(NULL, "\n");
     lineNumber += 1;
 
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
     printf("%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
     sprintf(fileStr, "%05d: %s, CYC:%d\n", lineNumber, traceStr, cpuCycles);
     fileio_writeStringToFile("./debug/nestest-gen.log", fileStr, true);
@@ -212,7 +225,7 @@ void nes_debugCPU() {
 
   }
 
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
   printf("\nMISMATCH AT LINE %d\n", lineNumber);
   printf("EXPECTED: `%.73s`\n", correctStr);
   printf("RECEIVED: `%.73s`\n", traceStr);

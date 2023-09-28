@@ -31,13 +31,7 @@
 #define CONFIG_H
 
 #include "global.h"
-
-#if (!SUPPRESS_CONFIG)
 #include "fileio.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#endif
 
 typedef enum {
   false = 0,

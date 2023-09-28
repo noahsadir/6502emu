@@ -21,7 +21,7 @@ char* mnemonicStringTable[80];
 void mos6502_init(void(*w)(uint16_t, uint8_t), uint8_t(*r)(uint16_t)) {
   mos6502_configureTables();
 
-  if (CONFIG_CPU.shouldCacheInstructions) {
+  if (CONFIG_CPU.shouldCacheInstructions && !MINIMIZE_MEMORY) {
     for (int i = 0; i < 65536; i++) {
       prgBytecode.cacheMap[i] = false;
     }
@@ -42,7 +42,7 @@ void mos6502_init(void(*w)(uint16_t, uint8_t), uint8_t(*r)(uint16_t)) {
 
 void mos6502_step(char* traceStr, void(*c)(uint8_t)) {
   Bytecode* bytecode = NULL;
-  if (CONFIG_CPU.shouldCacheInstructions) {
+  if (CONFIG_CPU.shouldCacheInstructions && !MINIMIZE_MEMORY) {
     if (!prgBytecode.cacheMap[reg.pc]) {
       static Bytecode bc;
       bytecode = &bc;
@@ -50,6 +50,7 @@ void mos6502_step(char* traceStr, void(*c)(uint8_t)) {
       prgBytecode.bytecodeCount += 1;
       prgBytecode.bytecodes[prgBytecode.bytecodeCount - 1] = bc;
       prgBytecode.addrMap[reg.pc] = prgBytecode.bytecodeCount - 1;
+      prgBytecode.cacheMap[reg.pc] = true;
     }
     bytecode = prgBytecode.bytecodes + prgBytecode.addrMap[reg.pc];
   } else {
@@ -66,6 +67,7 @@ void mos6502_step(char* traceStr, void(*c)(uint8_t)) {
 }
 
 void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode) {
+#if (!SUPPRESS_EXTIO)
   char dataStr[9];
   char operandConvertStr[32];
   operandConvertStr[0] = '\0';
@@ -82,27 +84,27 @@ void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode) {
   }
 
   if (bytecode->addressingMode == AM_ZERO_PAGE) {
-    sprintf(operandConvertStr, " = %02X", memRead(mos6502_fetchValue(bytecode->addressingMode)));
+    sprintf(operandConvertStr, " = %02X", memRead(mos6502_fetchValue(bytecode)));
   } else if (bytecode->addressingMode == AM_ABSOLUTE) {
     if (bytecode->mnemonic != I_JMP && bytecode->mnemonic != I_JSR) {
-      sprintf(operandConvertStr, " = %02X", memRead(mos6502_fetchValue(bytecode->addressingMode)));
+      sprintf(operandConvertStr, " = %02X", memRead(mos6502_fetchValue(bytecode)));
     }
   } else if (bytecode->addressingMode == AM_ABS_X || bytecode->addressingMode == AM_ABS_Y) {
     if (bytecode->mnemonic != I_JMP && bytecode->mnemonic != I_JSR) {
-      sprintf(operandConvertStr, " @ %04X = %02X", mos6502_fetchValue(bytecode->addressingMode), memRead(mos6502_fetchValue(bytecode->addressingMode)));
+      sprintf(operandConvertStr, " @ %04X = %02X", mos6502_fetchValue(bytecode), memRead(mos6502_fetchValue(bytecode)));
     }
   } else if (bytecode->addressingMode == AM_ZP_X || bytecode->addressingMode == AM_ZP_Y) {
     if (bytecode->mnemonic != I_JMP && bytecode->mnemonic != I_JSR) {
-      sprintf(operandConvertStr, " @ %02X = %02X", mos6502_fetchValue(bytecode->addressingMode), memRead(mos6502_fetchValue(bytecode->addressingMode)));
+      sprintf(operandConvertStr, " @ %02X = %02X", mos6502_fetchValue(bytecode), memRead(mos6502_fetchValue(bytecode)));
     }
   } else if (bytecode->addressingMode == AM_ABS_INDIRECT) {
-    sprintf(operandConvertStr, " = %04X", mos6502_fetchValue(bytecode->addressingMode));
+    sprintf(operandConvertStr, " = %04X", mos6502_fetchValue(bytecode));
   } else if (bytecode->addressingMode == AM_ZP_X_INDIRECT) {
     if (bytecode->mnemonic != I_JMP && bytecode->mnemonic != I_JSR) {
       sprintf(operandConvertStr, " @ %02X = %04X = %02X",
         (uint8_t)(bytecode->data[1] + reg.x),
-        mos6502_fetchValue(bytecode->addressingMode),
-        memRead(mos6502_fetchValue(bytecode->addressingMode)));
+        mos6502_fetchValue(bytecode),
+        memRead(mos6502_fetchValue(bytecode)));
     }
   } else if (bytecode->addressingMode == AM_ZP_INDIRECT_Y) {
     if (bytecode->mnemonic != I_JMP && bytecode->mnemonic != I_JSR) {
@@ -111,8 +113,8 @@ void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode) {
       uint16_t indaddr = ((uint16_t)memRead(addrInc) << 8) | (uint16_t)memRead(addr);
       sprintf(operandConvertStr, " = %04X @ %04X = %02X",
         indaddr,
-        mos6502_fetchValue(bytecode->addressingMode),
-        memRead(mos6502_fetchValue(bytecode->addressingMode)));
+        mos6502_fetchValue(bytecode),
+        memRead(mos6502_fetchValue(bytecode)));
     }
   }
 
@@ -120,18 +122,19 @@ void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode) {
 
   sprintf(traceStr, "%04X  %-8s %-32s A:%02X X:%02X Y:%02X P:%02X SP:%02X",
     reg.pc, dataStr, asmStr, reg.a, reg.x, reg.y, reg.p, reg.s);
+#endif
 }
 
-uint16_t mos6502_read16(uint16_t addr) {
+force_inline uint16_t mos6502_read16(uint16_t addr) {
   return (((uint16_t)memRead(addr + 2)) << 8) | (uint16_t)memRead(addr + 1);
 }
 
-void mos6502_stack_push(uint8_t data) {
+force_inline void mos6502_stack_push(uint8_t data) {
   memWrite(0x0100 + (uint16_t)reg.s, data);
   reg.s -= 1;
 }
 
-uint8_t mos6502_stack_pop() {
+force_inline uint8_t mos6502_stack_pop() {
   reg.s += 1;
   uint8_t val = memRead(0x0100 + (uint16_t)reg.s);
   return val;
@@ -156,7 +159,7 @@ void mos6502_interrupt_irq() {
   reg.pc = mos6502_read16(0xFFFE);
 }
 
-void mos6502_setflag(CPUStatusFlag flag, uint8_t value) {
+force_inline void mos6502_setflag(CPUStatusFlag flag, uint8_t value) {
   if (value == 0) {
     reg.p &= ~flag;
   } else {
@@ -164,12 +167,12 @@ void mos6502_setflag(CPUStatusFlag flag, uint8_t value) {
   }
 }
 
-uint8_t mos6502_getflag(CPUStatusFlag flag) {
+force_inline uint8_t mos6502_getflag(CPUStatusFlag flag) {
   return (reg.p & flag) > 0;
 }
 
-uint16_t mos6502_fetchValue(CPUAddressingMode addrMode) {
-  switch (addrMode) {
+force_inline uint16_t mos6502_fetchValue(Bytecode* bytecode) {
+  switch (bytecode->addressingMode) {
     case AM_ACCUMULATOR: {
       return reg.a;
       break;
@@ -183,22 +186,22 @@ uint16_t mos6502_fetchValue(CPUAddressingMode addrMode) {
       break;
     }
     case AM_ABSOLUTE: {
-      uint16_t addr = ((uint16_t)memRead(reg.pc + 2) << 8) | (uint16_t)memRead(reg.pc + 1);
+      uint16_t addr = ((uint16_t)bytecode->data[2] << 8) | (uint16_t)bytecode->data[1];
       return addr;
       break;
     }
     case AM_ZERO_PAGE: {
-      uint8_t addr = memRead(reg.pc + 1);
+      uint8_t addr = bytecode->data[1];
       return addr;
       break;
     }
     case AM_RELATIVE: {
-      int8_t offset = memRead(reg.pc + 1);
+      int8_t offset = bytecode->data[1];
       return (reg.pc + 2) + offset;
       break;
     }
     case AM_ABS_INDIRECT: {
-      uint16_t addr = ((uint16_t)memRead(reg.pc + 2) << 8) | (uint16_t)memRead(reg.pc + 1);
+      uint16_t addr = ((uint16_t)bytecode->data[2] << 8) | (uint16_t)bytecode->data[1];
       uint16_t low = memRead(addr);
       uint16_t high = ((addr & 0x00FF) == 0xFF) ? memRead(addr & 0xFF00) : memRead(addr + 1);
       uint16_t indaddr = (high << 8) | low;
@@ -206,31 +209,31 @@ uint16_t mos6502_fetchValue(CPUAddressingMode addrMode) {
       break;
     }
     case AM_ABS_X: {
-      uint16_t addr = ((uint16_t)memRead(reg.pc + 2) << 8) | (uint16_t)memRead(reg.pc + 1);
+      uint16_t addr = ((uint16_t)bytecode->data[2] << 8) | (uint16_t)bytecode->data[1];
       addr += reg.x;
       return addr;
       break;
     }
     case AM_ABS_Y: {
-      uint16_t addr = ((uint16_t)memRead(reg.pc + 2) << 8) | (uint16_t)memRead(reg.pc + 1);
+      uint16_t addr = ((uint16_t)bytecode->data[2] << 8) | (uint16_t)bytecode->data[1];
       addr += reg.y;
       return addr;
       break;
     }
     case AM_ZP_X: {
-      uint8_t addr = memRead(reg.pc + 1);
+      uint8_t addr = bytecode->data[1];
       addr += reg.x;
       return addr;
       break;
     }
     case AM_ZP_Y: {
-      uint8_t addr = memRead(reg.pc + 1);
+      uint8_t addr = bytecode->data[1];
       addr += reg.y;
       return addr;
       break;
     }
     case AM_ZP_X_INDIRECT: {
-      uint8_t addr = memRead(reg.pc + 1);
+      uint8_t addr = bytecode->data[1];
       addr += reg.x;
       uint8_t addrInc = addr + 1;
       uint16_t indaddr = ((uint16_t)memRead(addrInc) << 8) | (uint16_t)memRead(addr);
@@ -238,7 +241,7 @@ uint16_t mos6502_fetchValue(CPUAddressingMode addrMode) {
       break;
     }
     case AM_ZP_INDIRECT_Y: {
-      uint8_t addr = memRead(reg.pc + 1);
+      uint8_t addr = bytecode->data[1];
       uint8_t addrInc = addr + 1;
       uint16_t indaddr = ((uint16_t)memRead(addrInc) << 8) | (uint16_t)memRead(addr);
       indaddr += reg.y;
@@ -250,7 +253,11 @@ uint16_t mos6502_fetchValue(CPUAddressingMode addrMode) {
   return 0;
 }
 
-void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc) {
+void mos6502_decode_external_wrapper(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc) {
+  mos6502_decode(bytecode, assemblyResult, byteCount, pc);
+}
+
+force_inline void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc) {
   uint8_t opcode = memRead(pc);
   CPUAddressingMode addrMode = addrModeTable[opcode];
   CPUMnemonic mnemonic = mnemonicTable[opcode];
@@ -288,7 +295,7 @@ void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount
     *byteCount = bytes;
   }
 
-#if (!SUPPRESS_FILEIO)
+#if (!SUPPRESS_EXTIO)
   if (assemblyResult != NULL && CONFIG_DEBUG.shouldTraceInstructions) {
     char operandString[64];
 
@@ -315,8 +322,8 @@ void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount
 #endif
 }
 
-uint8_t mos6502_execute(Bytecode* bytecode) {
-  uint16_t operand = mos6502_fetchValue(bytecode->addressingMode);
+force_inline uint8_t mos6502_execute(Bytecode* bytecode) {
+  uint16_t operand = mos6502_fetchValue(bytecode);
   uint8_t cycles = cycleTable[bytecode->data[0]];
 
   switch (bytecode->mnemonic) {

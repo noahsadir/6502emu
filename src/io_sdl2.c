@@ -132,7 +132,7 @@ void io_render() {
     }
     io_drawString(PANIC_MSG, 0);
   } else {
-    io_drawString(OVERLAY_MSG, CONFIG_DISPLAY.screens - 1);
+    io_drawString(OVERLAY_MSG, 0);
   }
 
   for (int i = 0; i < CONFIG_DISPLAY.screens; i++) {

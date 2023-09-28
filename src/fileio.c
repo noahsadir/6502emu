@@ -7,7 +7,7 @@
 
 #include "include/fileio.h"
 
-#if (SUPPRESS_FILEIO)
+#if (SUPPRESS_EXTIO)
 
 int fileio_readFileAsString(char* path, char** output) {
   return -1;

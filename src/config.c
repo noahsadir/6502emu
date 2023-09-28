@@ -12,7 +12,7 @@ DisplayConfig CONFIG_DISPLAY;
 CpuConfig CONFIG_CPU;
 DebugConfig CONFIG_DEBUG;
 
-#if (SUPPRESS_CONFIG)
+#if (SUPPRESS_EXTIO)
 
 bool config_init(char* path) {
   return false;
@@ -45,7 +45,7 @@ bool config_init(char* path) {
 }
 
 void config_print() {
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
   printf("\nPLATFORM: ");
   if (CONFIG_PLATFORM == EMU_PLAT_NES) {
     printf("NES\n");
@@ -125,21 +125,21 @@ void config_trimWhitespace(char** strPtr) {
 }
 
 void config_throwInvalidConfig() {
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
   printf("CONFIGURATION ERROR: Invalid config file\n");
 #endif
   exit(1);
 }
 
 void config_throwInvalidConfigArg(char* arg) {
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
   printf("CONFIGURATION ERROR: Invalid argument '%s'\n", arg);
 #endif
   exit(1);
 }
 
 void config_throwInvalidConfigVal(char* arg, char* val) {
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
   printf("CONFIGURATION ERROR: Invalid value '%s' for property '%s'\n", val, arg);
 #endif
   exit(1);
@@ -151,7 +151,7 @@ bool config_boolFromString(char* arg, char* val) {
   } else if (!strcmp(val, "false")) {
     return false;
   } else {
-#if (!SUPPRESS_PRINTF)
+#if (!SUPPRESS_EXTIO)
     printf("CONFIGURATION ERROR: Invalid value '%s' for property '%s'\n", val, arg);
 #endif
     exit(1);

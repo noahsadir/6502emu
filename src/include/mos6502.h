@@ -176,13 +176,13 @@ void mos6502_step(char* traceStr, void(*c)(uint8_t));
 void mos6502_interrupt_reset();
 void mos6502_interrupt_nmi();
 void mos6502_interrupt_irq();
-void mos6502_setflag(CPUStatusFlag flag, uint8_t value);
-uint8_t mos6502_getflag(CPUStatusFlag flag);
-void mos6502_stack_push(uint8_t data);
-uint8_t mos6502_stack_pop();
-uint16_t mos6502_read16(uint16_t addr);
-uint8_t mos6502_execute(Bytecode* bytecode);
-uint16_t mos6502_fetchValue(CPUAddressingMode addrMode);
+force_inline void mos6502_setflag(CPUStatusFlag flag, uint8_t value);
+force_inline uint8_t mos6502_getflag(CPUStatusFlag flag);
+force_inline void mos6502_stack_push(uint8_t data);
+force_inline uint8_t mos6502_stack_pop();
+force_inline uint16_t mos6502_read16(uint16_t addr);
+force_inline uint8_t mos6502_execute(Bytecode* bytecode);
+force_inline uint16_t mos6502_fetchValue(Bytecode* bytecode);
 void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode);
 
 /**
@@ -196,8 +196,12 @@ void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode);
  *                  instruction. Pass in NULL to disable.
  * @param pc the location of the instruction in memory
  */
-void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc);
+force_inline void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc);
 
+/**
+ * Non-inlined function for external calls to mos6502_decode()
+ */
+void mos6502_decode_external_wrapper(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc);
 /**
  * @brief Configure tables for translating opcodes
  */
