@@ -32,7 +32,7 @@ bool config_init(char* path) {
     free(cfgStr);
 
     if (CONFIG_DEBUG.shouldDisplayDebugScreen) {
-      CONFIG_DISPLAY.screens = 2;
+      CONFIG_DISPLAY.screens = 4;
     } else {
       CONFIG_DISPLAY.screens = 1;
     }

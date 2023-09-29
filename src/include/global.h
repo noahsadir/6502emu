@@ -66,6 +66,24 @@
 
 #define force_inline __attribute__((always_inline)) inline
 
+#define GET_bit0(val) (val & 1)
+#define GET_bit1(val) ((val >> 1) & 1)
+#define GET_bit2(val) ((val >> 2) & 1)
+#define GET_bit3(val) ((val >> 3) & 1)
+#define GET_bit4(val) ((val >> 4) & 1)
+#define GET_bit5(val) ((val >> 5) & 1)
+#define GET_bit6(val) ((val >> 6) & 1)
+#define GET_bit7(val) ((val >> 7) & 1)
+
+#define SET_bit0(val, f) ((val & ~BIT_MASK_1) | ((f & 1) << 0))
+#define SET_bit1(val, f) ((val & ~BIT_MASK_2) | ((f & 1) << 1))
+#define SET_bit2(val, f) ((val & ~BIT_MASK_3) | ((f & 1) << 2))
+#define SET_bit3(val, f) ((val & ~BIT_MASK_4) | ((f & 1) << 3))
+#define SET_bit4(val, f) ((val & ~BIT_MASK_5) | ((f & 1) << 4))
+#define SET_bit5(val, f) ((val & ~BIT_MASK_6) | ((f & 1) << 5))
+#define SET_bit6(val, f) ((val & ~BIT_MASK_7) | ((f & 1) << 6))
+#define SET_bit7(val, f) ((val & ~BIT_MASK_8) | ((f & 1) << 7))
+
 #define BIT_FILL_0 0x0
 #define BIT_FILL_1 0x1
 #define BIT_FILL_2 0x3

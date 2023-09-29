@@ -35,6 +35,7 @@
 #include "nescartridge.h"
 #include "mos6502.h"
 #include "io.h"
+#include "nesppu.h"
 
 void nes_init(char* fsRoot);
 void nes_start();
