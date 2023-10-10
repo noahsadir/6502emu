@@ -119,14 +119,13 @@ void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode) {
   }
 
   strcat(asmStr, operandConvertStr);
-
   sprintf(traceStr, "%04X  %-8s %-32s A:%02X X:%02X Y:%02X P:%02X SP:%02X",
     reg.pc, dataStr, asmStr, reg.a, reg.x, reg.y, reg.p, reg.s);
 #endif
 }
 
 force_inline uint16_t mos6502_read16(uint16_t addr) {
-  return (((uint16_t)memRead(addr + 2)) << 8) | (uint16_t)memRead(addr + 1);
+  return (((uint16_t)memRead(addr + 1)) << 8) | (uint16_t)memRead(addr);
 }
 
 force_inline void mos6502_stack_push(uint8_t data) {

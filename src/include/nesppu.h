@@ -98,6 +98,8 @@ extern uint8_t ppuMemoryMap[0x4000];
 extern uint8_t oam[256];
 
 void nesppu_init();
+void nesppu_step(uint16_t cycles, void(*invoke_nmi)(void));
+void nesppu_drawFrame();
 void nesppu_configurePatternLookup();
 uint8_t nesppu_read(uint16_t addr);
 void nesppu_write(uint16_t addr, uint8_t data);

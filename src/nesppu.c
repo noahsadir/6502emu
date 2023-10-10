@@ -4,14 +4,21 @@
  * @author Noah Sadir
  * @date 2023-09-28
  */
-
+/*
+TODO:
+[ ] Reading/writing PPU memory
+[ ] Setting registers
+*/
 #include "include/nesppu.h"
 
 PPURegisters ppureg;
 
 uint8_t ppuMemoryMap[0x4000];
 uint8_t patternTable[512][64];
+uint8_t nametable[4][1024];
 uint8_t oam[256];
+
+uint32_t cycleCount = 0;
 
 void nesppu_init() {
   ppureg.ppuctrl = 0x00;
@@ -68,6 +75,25 @@ void nesppu_configurePatternLookup() {
       }
     }
   }
+}
+
+void nesppu_step(uint16_t cycles, void(*invoke_nmi)(void)) {
+  for (int i = 0; i < cycles; i++) {
+    // increment cycle count or reset from beginning
+    cycleCount = (cycleCount > 89342) ? 0 : cycleCount + 1;
+    uint16_t scanline = cycleCount / 341;
+    if (scanline < 241) {
+      // probably check for sprite zero
+    } else if (scanline == 241) {
+      nesppu_drawFrame();
+      ppureg.ppustatus = SET_ppustat_vblankstarted(ppureg.ppustatus, 1);
+      invoke_nmi();
+    }
+  }
+}
+
+void nesppu_drawFrame() {
+
 }
 
 uint8_t nesppu_read(uint16_t addr) {

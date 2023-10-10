@@ -32,6 +32,9 @@ void nes_init(char* fsRoot) {
   } else if (CONFIG_DEBUG.shouldDebugCPU) {
     nes_debugCPU();
   } else {
+    if (CONFIG_DEBUG.shouldTraceInstructions) {
+      fileio_writeStringToFile("./debug/trace.log", "", false);
+    }
     nes_start();
   }
 
@@ -59,7 +62,18 @@ void nes_start() {
   while (true) {
     // perform desired number of cpu cycles per ms
     while (cpuCycles < cyclesPerInterval) {
-      mos6502_step(NULL, &nes_finishedInstruction);
+      if (CONFIG_DEBUG.shouldTraceInstructions) {
+        if (CONFIG_CPU.shouldCacheInstructions) {
+          io_panic("Cannot trace with caching.");
+        }
+        char trace[256];
+        trace[0] = '\0';
+        mos6502_step(trace, &nes_finishedInstruction);
+        sprintf(trace, "%s\n", trace);
+        fileio_writeStringToFile("./debug/trace.log", trace, true);
+      } else {
+        mos6502_step(NULL, &nes_finishedInstruction);
+      }
     }
 
     // update metrics every second
@@ -98,6 +112,7 @@ void nes_start() {
 
 void nes_finishedInstruction(uint8_t cycles) {
   cpuCycles += cycles;
+  nesppu_step(cycles * 3, &mos6502_interrupt_nmi);
 }
 
 void nes_configureMemory() {
@@ -120,7 +135,7 @@ uint8_t nes_cpuRead(uint16_t addr) {
     addr = 0x2000 + (addr % 0x08);
     if (addr == 0x2002) {
       uint8_t oldstat = ppureg.ppustatus;
-      ppureg.ppustatus &= ~BIT_MASK_8;
+      ppureg.ppustatus = SET_ppustat_vblankstarted(ppureg.ppustatus, 0);
       ppureg.addrLatch = false;
       ppureg.scrollLatch = false;
       while (addr <= 0x3FFF) {
