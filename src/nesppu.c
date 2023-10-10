@@ -32,6 +32,64 @@ void nesppu_init() {
   nesppu_configurePatternLookup();
 }
 
+void nesppu_step(uint16_t cycles, void(*invoke_nmi)(void)) {
+  for (int i = 0; i < cycles; i++) {
+    // increment cycle count or reset from beginning
+    cycleCount = (cycleCount > 89342) ? 0 : cycleCount + 1;
+    uint16_t scanline = cycleCount / 341;
+    if (scanline < 241) {
+      // probably check for sprite zero
+    } else if (scanline == 241) {
+      nesppu_drawFrame();
+      ppureg.ppustatus = SET_ppustat_vblankstarted(ppureg.ppustatus, 1);
+    }
+    
+    if (scanline >= 241) {
+      // invoke NMI any time during vblank when both Vblank & NMI flags are enabled
+      if (GET_ppustat_vblankstarted(ppureg.ppustatus) && GET_ppuctrl_generatenmi(ppureg.ppuctrl)) {
+        invoke_nmi();
+      }
+    }
+  }
+}
+
+void nesppu_drawFrame() {
+
+}
+
+uint8_t nesppu_read(uint16_t addr) {
+  return ppuMemoryMap[addr];
+}
+
+void nesppu_write(uint16_t addr, uint8_t data) {
+  if (addr <= 0x1FFF) { // Pattern table
+    // read only
+  } else if (addr <= 0x3EFF) { // Nametable
+    // complex mirrror stuff
+    addr = 0x2000 + (addr % 0x400);
+    ppuMemoryMap[addr] = data;
+    ppuMemoryMap[addr + 0x400] = data;
+    ppuMemoryMap[addr + 0x800] = data;
+    ppuMemoryMap[addr + 0xC00] = data;
+  } else if (addr <= 0x3FFF) { // Palette
+    addr = 0x3F00 + (addr % 0x1F);
+    if (addr == 0x3F00 || addr == 0x3F10) {
+      // special case for background palette
+      addr = 0x3F00;
+      while (addr < 0x3FFF) {
+        ppuMemoryMap[addr] = data;
+        ppuMemoryMap[addr + 0x10] = data;
+        addr += 0x20;
+      }
+    } else {
+      while (addr < 0x3FFF) {
+        ppuMemoryMap[addr] = data;
+        addr += 0x20;
+      }
+    }
+  }
+}
+
 void nesppu_configurePatternLookup() {
   for (int i = 0; i < 512; i++) {
     uint16_t chrAddrLow = i * 16;
@@ -74,50 +132,5 @@ void nesppu_configurePatternLookup() {
         }
       }
     }
-  }
-}
-
-void nesppu_step(uint16_t cycles, void(*invoke_nmi)(void)) {
-  for (int i = 0; i < cycles; i++) {
-    // increment cycle count or reset from beginning
-    cycleCount = (cycleCount > 89342) ? 0 : cycleCount + 1;
-    uint16_t scanline = cycleCount / 341;
-    if (scanline < 241) {
-      // probably check for sprite zero
-    } else if (scanline == 241) {
-      nesppu_drawFrame();
-      ppureg.ppustatus = SET_ppustat_vblankstarted(ppureg.ppustatus, 1);
-      invoke_nmi();
-    }
-  }
-}
-
-void nesppu_drawFrame() {
-
-}
-
-uint8_t nesppu_read(uint16_t addr) {
-  return ppuMemoryMap[addr];
-}
-
-void nesppu_write(uint16_t addr, uint8_t data) {
-  if (addr <= 0x0FFF) {
-
-  } else if (addr <= 0x1FFF) {
-
-  } else if (addr <= 0x23FF) {
-
-  } else if (addr <= 0x27FF) {
-
-  } else if (addr <= 0x2BFF) {
-
-  } else if (addr <= 0x2FFF) {
-
-  } else if (addr <= 0x3EFF) {
-    
-  } else if (addr <= 0x3F1F) {
-
-  } else if (addr <= 0x3FFF) {
-
   }
 }

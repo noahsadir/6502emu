@@ -11,6 +11,7 @@ INES cartridge;
 uint8_t memoryMap[0x10000];
 int32_t cpuCycles = 0;
 uint32_t realFreq = 0;
+bool resetPPUStat = false;
 
 struct timeval t1, t2;
 
@@ -112,6 +113,18 @@ void nes_start() {
 
 void nes_finishedInstruction(uint8_t cycles) {
   cpuCycles += cycles;
+  if (resetPPUStat) {
+    // wait until end of instruction before resetting PPU stat
+    uint16_t addr = 0x2002;
+    ppureg.ppustatus = SET_ppustat_vblankstarted(ppureg.ppustatus, 0);
+    ppureg.addrLatch = false;
+    ppureg.scrollLatch = false;
+    while (addr <= 0x3FFF) {
+      memoryMap[addr] = ppureg.ppustatus;
+      addr += 0x08;
+    }
+    resetPPUStat = false;
+  }
   nesppu_step(cycles * 3, &mos6502_interrupt_nmi);
 }
 
@@ -134,15 +147,8 @@ uint8_t nes_cpuRead(uint16_t addr) {
   if (addr >= 0x2000 && addr <= 0x3FFF) {
     addr = 0x2000 + (addr % 0x08);
     if (addr == 0x2002) {
-      uint8_t oldstat = ppureg.ppustatus;
-      ppureg.ppustatus = SET_ppustat_vblankstarted(ppureg.ppustatus, 0);
-      ppureg.addrLatch = false;
-      ppureg.scrollLatch = false;
-      while (addr <= 0x3FFF) {
-        memoryMap[addr] = ppureg.ppustatus;
-        addr += 0x08;
-      }
-      return oldstat;
+      resetPPUStat = true;
+      return ppureg.ppustatus;
     } else if (addr == 0x2004) {
       return oam[ppureg.oamaddr];
     } else if (addr == 0x2007) {
@@ -206,6 +212,8 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
       for (int i = 0; i < 256; i++) {
         oam[i] = memoryMap[cpuAddr + i];
       }
+    } else if (addr == 0x4017) {
+      memoryMap[addr] = data;
     }
   } else if (addr <= 0x401F) {
     return;
@@ -239,7 +247,7 @@ void nes_generateMetrics(char* outputStr) {
     sprintf(perfString, "%.6f MHz\n\n", (double)realFreq / 1000000.0);
     char regString[256];
     sprintf(regString, 
-      "CPU\n----\n A: %02X\n X: %02X\n Y: %02X\n S: %02X\n P: %02X\nPC: %04X\n\nPPU\n----\n         CPHBSINN\nPPUCTRL: %d%d%d%d%d%d%d%d\n\n         BGRsbMmG\nPPUMASK: %d%d%d%d%d%d%d%d\n\n         VSO\nPPUSTAT: %d%d%d\n\nPPUADDR: %04X\nOAMADDR: %02X\nSCRLL-X: %d\nSCRLL-Y: %d",
+      "CPU\n----\n A: %02X\n X: %02X\n Y: %02X\n S: %02X\n P: %02X\nPC: %04X\n\nPPU\n----\n         VPHBSINN\nPPUCTRL: %d%d%d%d%d%d%d%d\n\n         BGRsbMmG\nPPUMASK: %d%d%d%d%d%d%d%d\n\n         VSO\nPPUSTAT: %d%d%d\n\nPPUADDR: %04X\nOAMADDR: %02X\nSCRLL-X: %d\nSCRLL-Y: %d",
       reg.a, reg.x, reg.y, reg.s, reg.p, reg.pc,
       GET_bit7(ppureg.ppuctrl), GET_bit6(ppureg.ppuctrl), GET_bit5(ppureg.ppuctrl), GET_bit4(ppureg.ppuctrl), GET_bit3(ppureg.ppuctrl), GET_bit2(ppureg.ppuctrl), GET_bit1(ppureg.ppuctrl), GET_bit0(ppureg.ppuctrl),
       GET_bit7(ppureg.ppumask), GET_bit6(ppureg.ppumask), GET_bit5(ppureg.ppumask), GET_bit4(ppureg.ppumask), GET_bit3(ppureg.ppumask), GET_bit2(ppureg.ppumask), GET_bit1(ppureg.ppumask), GET_bit0(ppureg.ppumask),
