@@ -19,7 +19,7 @@ void nes_init(char* fsRoot) {
   cartridge = nescartridge_loadRom(fsRoot);
   
   nes_configureMemory();
-  nesppu_init();
+  nesppu_init(&cartridge);
   mos6502_init(&nes_cpuWrite, &nes_cpuRead);
 
   if (cartridge.header.disassemblyMode) {
@@ -112,6 +112,9 @@ void nes_start() {
 }
 
 void nes_finishedInstruction(uint8_t cycles) {
+  if (cycles == 0) {
+    io_panic("Illegal instruction.");
+  }
   cpuCycles += cycles;
   if (resetPPUStat) {
     // wait until end of instruction before resetting PPU stat
@@ -169,9 +172,6 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
     addr = 0x2000 + (addr % 0x08);
     if (addr == 0x2000) {
       ppureg.ppuctrl = data;
-      if (GET_ppuctrl_generatenmi(ppureg.ppuctrl) && GET_ppustat_vblankstarted(ppureg.ppustatus)) {
-        mos6502_interrupt_nmi();
-      }
     } else if (addr == 0x2001) {
       ppureg.ppumask = data;
     } else if (addr == 0x2002) {
@@ -203,7 +203,7 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
       ppureg.addrLatch = !ppureg.addrLatch;
     } else if (addr == 0x2007) {
       nesppu_write(ppureg.loadedAddr & 0x3FFF, data);
-      ppureg.loadedAddr += (GET_ppuctrl_vraminc(ppureg.ppuctrl) ? 1 : 32);
+      ppureg.loadedAddr += (GET_ppuctrl_vraminc(ppureg.ppuctrl) ? 32 : 1);
     }
   } else if (addr <= 0x4017) {
     if (addr == 0x4014) {

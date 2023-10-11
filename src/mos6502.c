@@ -164,6 +164,7 @@ force_inline void mos6502_setflag(CPUStatusFlag flag, uint8_t value) {
   } else {
     reg.p |= flag;
   }
+  reg.p &= ~CPUSTAT_BREAK2;
 }
 
 force_inline uint8_t mos6502_getflag(CPUStatusFlag flag) {
@@ -828,7 +829,7 @@ force_inline uint8_t mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_ANE: {
-      
+      return 0;
       break;
     }
     case I_ILL_ARR: {
@@ -987,15 +988,15 @@ force_inline uint8_t mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_SHA: {
-
+      return 0;
       break;
     }
     case I_ILL_SHX: {
-
+      return 0;
       break;
     }
     case I_ILL_SHY: {
-
+      return 0;
       break;
     }
     case I_ILL_SLO: {
@@ -1035,7 +1036,7 @@ force_inline uint8_t mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_TAS: {
-
+      return 0;
       break;
     }
     case I_ILL_USBC: {
@@ -1054,6 +1055,7 @@ force_inline uint8_t mos6502_execute(Bytecode* bytecode) {
       break;
     }
     case I_ILL_JAM: {
+      return 0;
       break;
     }
     default: break;
