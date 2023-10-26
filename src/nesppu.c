@@ -115,7 +115,7 @@ void nesppu_drawSprites(bool hasPriority) {
     bool flipHorizontal = byte2 & BIT_MASK_7;
     bool priority = !(byte2 & BIT_MASK_6);
 
-    if (y >= 0xEF) continue;
+    if (y == 0 || y >= 0xEF) continue;
 
     for (int i = 0; i < 64; i++) {
       int row = flipVertical ? 7 - (i / 8) : (i / 8);
