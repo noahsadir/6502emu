@@ -83,7 +83,8 @@ void nes_start(void) {
     // perform I/O updates every interval
     if (realUs > TIMING_INTERVAL) {
       Keyboard key;
-      io_pollInput(&key);
+      int status = io_pollInput(&key);
+      nes_toggleJoypad(key, status);
       io_render();
       realUs -= TIMING_INTERVAL;
       intervals += 1;
@@ -170,6 +171,10 @@ uint8_t nes_cpuRead(uint16_t addr) {
       ppureg.loadedAddr += (GET_ppuctrl_vraminc(ppureg.ppuctrl) ? 32 : 1);
       return data;
     }
+  } else if (addr <= 0x4017) {
+    if (addr == 0x4016) {
+      return nesjoypad_get();
+    }
   }
   return memoryMap[addr];
 }
@@ -225,6 +230,8 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
       for (int i = 0; i < 256; i++) {
         oam[i] = memoryMap[cpuAddr + i];
       }
+    } else if (addr == 0x4016) {
+      nesjoypad_setStrobeMode(data & 1);
     } else if (addr == 0x4017) {
       memoryMap[addr] = data;
     }
@@ -232,6 +239,28 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
     return;
   } else if (addr <= 0xFFFF) {
     // cartridge space
+  }
+}
+
+void nes_toggleJoypad(Keyboard key, int status) {
+  if (status == 0) return;
+  bool enabled = (status == 1);
+  if (key == K_A) {
+    nesjoypad_set(NJP_LEFT, enabled);
+  } else if (key == K_W) {
+    nesjoypad_set(NJP_UP, enabled);
+  } else if (key == K_S) {
+    nesjoypad_set(NJP_DOWN, enabled);
+  } else if (key == K_D) {
+    nesjoypad_set(NJP_RIGHT, enabled);
+  } else if (key == K_RETURN) {
+    nesjoypad_set(NJP_START, enabled);
+  } else if (key == K_SPACE) {
+    nesjoypad_set(NJP_SELECT, enabled);
+  } else if (key == K_P) {
+    nesjoypad_set(NJP_A, enabled);
+  } else if (key == K_L) {
+    nesjoypad_set(NJP_B, enabled);
   }
 }
 

@@ -1,10 +1,10 @@
 /**
- * nes.h
+ * nesjoypad.h
  * 
- * Main controller for NES emulation.
+ * Abstraction layer for joypad.
  * 
  * @author Noah Sadir
- * @date 2023-07-30
+ * @date 2023-10-26
  * 
  * Copyright (c) 2023 Noah Sadir
  * 
@@ -26,27 +26,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-#ifndef NES_H
-#define NES_H
-
 #include "global.h"
 #include "config.h"
-#include "nescartridge.h"
-#include "mos6502.h"
-#include "io.h"
-#include "nesppu.h"
-#include "nesjoypad.h"
 
-void nes_init(char* fsRoot);
-void nes_start(void);
-void nes_disassemble(char* filePath);
-void nes_configureMemory(void);
-uint8_t nes_cpuRead(uint16_t addr);
-void nes_cpuWrite(uint16_t addr, uint8_t data);
-void nes_finishedInstruction(uint8_t cycles);
-void nes_generateMetrics(char* outputStr);
-void nes_toggleJoypad(Keyboard key, int status);
-void nes_debugCPU(void);
+typedef enum {
+  NJP_RIGHT   = BIT_MASK_8,
+  NJP_LEFT    = BIT_MASK_7,
+  NJP_DOWN    = BIT_MASK_6,
+  NJP_UP      = BIT_MASK_5,
+  NJP_START   = BIT_MASK_4,
+  NJP_SELECT  = BIT_MASK_3,
+  NJP_B       = BIT_MASK_2,
+  NJP_A       = BIT_MASK_1
+} NESJoypadButton;
 
-#endif
+uint8_t nesjoypad_get(void);
+void nesjoypad_set(NESJoypadButton button, bool enabled);
+void nesjoypad_setStrobeMode(bool mode);
