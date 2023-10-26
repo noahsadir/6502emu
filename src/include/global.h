@@ -81,14 +81,14 @@
 #define GET_bit6(val) ((val >> 6) & 1)
 #define GET_bit7(val) ((val >> 7) & 1)
 
-#define SET_bit0(val, f) ((val & ~BIT_MASK_1) | ((f & 1) << 0))
-#define SET_bit1(val, f) ((val & ~BIT_MASK_2) | ((f & 1) << 1))
-#define SET_bit2(val, f) ((val & ~BIT_MASK_3) | ((f & 1) << 2))
-#define SET_bit3(val, f) ((val & ~BIT_MASK_4) | ((f & 1) << 3))
-#define SET_bit4(val, f) ((val & ~BIT_MASK_5) | ((f & 1) << 4))
-#define SET_bit5(val, f) ((val & ~BIT_MASK_6) | ((f & 1) << 5))
-#define SET_bit6(val, f) ((val & ~BIT_MASK_7) | ((f & 1) << 6))
-#define SET_bit7(val, f) ((val & ~BIT_MASK_8) | ((f & 1) << 7))
+#define SET_bit0(val, f) ((val & ~BIT_MASK_0) | ((f & 1) << 0))
+#define SET_bit1(val, f) ((val & ~BIT_MASK_1) | ((f & 1) << 1))
+#define SET_bit2(val, f) ((val & ~BIT_MASK_2) | ((f & 1) << 2))
+#define SET_bit3(val, f) ((val & ~BIT_MASK_3) | ((f & 1) << 3))
+#define SET_bit4(val, f) ((val & ~BIT_MASK_4) | ((f & 1) << 4))
+#define SET_bit5(val, f) ((val & ~BIT_MASK_5) | ((f & 1) << 5))
+#define SET_bit6(val, f) ((val & ~BIT_MASK_6) | ((f & 1) << 6))
+#define SET_bit7(val, f) ((val & ~BIT_MASK_7) | ((f & 1) << 7))
 
 #define BIT_FILL_0 0x0
 #define BIT_FILL_1 0x1
@@ -100,13 +100,13 @@
 #define BIT_FILL_7 0x7F
 #define BIT_FILL_8 0xFF
 
-#define BIT_MASK_1 0x1
-#define BIT_MASK_2 0x2
-#define BIT_MASK_3 0x4
-#define BIT_MASK_4 0x8
-#define BIT_MASK_5 0x10
-#define BIT_MASK_6 0x20
-#define BIT_MASK_7 0x40
-#define BIT_MASK_8 0x80
+#define BIT_MASK_0 0x1
+#define BIT_MASK_1 0x2
+#define BIT_MASK_2 0x4
+#define BIT_MASK_3 0x8
+#define BIT_MASK_4 0x10
+#define BIT_MASK_5 0x20
+#define BIT_MASK_6 0x40
+#define BIT_MASK_7 0x80
 
 #endif

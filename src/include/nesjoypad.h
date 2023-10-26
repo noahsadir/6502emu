@@ -30,14 +30,14 @@
 #include "config.h"
 
 typedef enum {
-  NJP_RIGHT   = BIT_MASK_8,
-  NJP_LEFT    = BIT_MASK_7,
-  NJP_DOWN    = BIT_MASK_6,
-  NJP_UP      = BIT_MASK_5,
-  NJP_START   = BIT_MASK_4,
-  NJP_SELECT  = BIT_MASK_3,
-  NJP_B       = BIT_MASK_2,
-  NJP_A       = BIT_MASK_1
+  NJP_RIGHT   = BIT_MASK_7,
+  NJP_LEFT    = BIT_MASK_6,
+  NJP_DOWN    = BIT_MASK_5,
+  NJP_UP      = BIT_MASK_4,
+  NJP_START   = BIT_MASK_3,
+  NJP_SELECT  = BIT_MASK_2,
+  NJP_B       = BIT_MASK_1,
+  NJP_A       = BIT_MASK_0
 } NESJoypadButton;
 
 uint8_t nesjoypad_get(void);

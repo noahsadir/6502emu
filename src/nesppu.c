@@ -111,9 +111,9 @@ void nesppu_drawSprites(bool hasPriority) {
     uint16_t bankOffset = GET_ppuctrl_spritepattern(ppureg.ppuctrl) ? 256 : 0;
     uint8_t tileId = byte1;
     uint8_t paletteIndex = byte2 & 0x3;
-    bool flipVertical = byte2 & BIT_MASK_8;
-    bool flipHorizontal = byte2 & BIT_MASK_7;
-    bool priority = !(byte2 & BIT_MASK_6);
+    bool flipVertical = byte2 & BIT_MASK_7;
+    bool flipHorizontal = byte2 & BIT_MASK_6;
+    bool priority = !(byte2 & BIT_MASK_5);
 
     if (y == 0 || y >= 0xEF) continue;
 
