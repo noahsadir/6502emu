@@ -42,15 +42,15 @@ extern char* OVERLAY_MSG;
 extern char* PANIC_MSG;
 extern bool PANIC_MODE;
 
-void io_init();
+void io_init(void);
 int io_pollInput(Keyboard* key);
-void io_render();
-void io_clear();
+void io_render(void);
+void io_clear(void);
 void io_drawString(char* str, int screen);
 void io_drawChar(char chr, int num, uint32_t* bmp);
 void io_drawScreen(int screen,  uint32_t* pixels);
 void io_drawPixel(int x, int y, int screen, uint32_t color,  uint32_t* pixels);
 void io_panic(char* str);
-void io_kill();
+void io_kill(void);
 
 #endif

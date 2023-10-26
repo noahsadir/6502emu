@@ -79,7 +79,7 @@ Keyboard convertSDLKeycode(SDL_KeyCode k) {
   return K_ESCAPE;
 }
 
-void io_init() {
+void io_init(void) {
   SDL_Init(SDL_INIT_VIDEO);
   window = SDL_CreateWindow(
     "Emulator",
@@ -121,7 +121,7 @@ int io_pollInput(Keyboard* key) {
   return 0;
 }
 
-void io_render() {
+void io_render(void) {
   SDL_FreeSurface(surface);
   uint32_t* pixels = (uint32_t*)surface->pixels;
   SDL_LockSurface(surface);
@@ -224,14 +224,14 @@ void io_drawPixel(int x, int y, int screen, uint32_t color, uint32_t* pixels) {
   }
 }
 
-void io_kill() {
+void io_kill(void) {
   free(BITMAP0);
   free(BITMAP1);
   free(BITMAP2);
   free(BITMAP3);
 }
 
-void io_clear() {
+void io_clear(void) {
   OVERLAY_MSG = "";
   uint32_t* bmp;
 

@@ -15,12 +15,12 @@ int main(int argc, char* argv[]) {
     CONFIG_DISPLAY.height = 240;
     CONFIG_DISPLAY.width = 256;
     CONFIG_DISPLAY.scale = 1;
-    CONFIG_DISPLAY.screens = 1;
+    CONFIG_DISPLAY.screens = 4;
     CONFIG_CPU.frequency = 1789773;
     CONFIG_CPU.shouldCacheInstructions = false;
     CONFIG_DEBUG.shouldDebugCPU = false;
-    CONFIG_DEBUG.shouldDisplayDebugScreen = false;
-    CONFIG_DEBUG.shouldDisplayPerformance = false;
+    CONFIG_DEBUG.shouldDisplayDebugScreen = true;
+    CONFIG_DEBUG.shouldDisplayPerformance = true;
     CONFIG_DEBUG.shouldLimitFrequency = false;
   }
 #else

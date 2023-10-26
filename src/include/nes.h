@@ -38,13 +38,13 @@
 #include "nesppu.h"
 
 void nes_init(char* fsRoot);
-void nes_start();
+void nes_start(void);
 void nes_disassemble(char* filePath);
-void nes_configureMemory();
+void nes_configureMemory(void);
 uint8_t nes_cpuRead(uint16_t addr);
 void nes_cpuWrite(uint16_t addr, uint8_t data);
 void nes_finishedInstruction(uint8_t cycles);
 void nes_generateMetrics(char* outputStr);
-void nes_debugCPU();
+void nes_debugCPU(void);
 
 #endif

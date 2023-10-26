@@ -42,8 +42,8 @@ INES nescartridge_parseRom(FileBinary* bin) {
   header.tvSystem = (bin->data[9] & BIT_FILL_1) ? TV_PAL : TV_NTSC;
   cartridge.header = header;
 
-  cartridge.prgRom = bin->data;
-  cartridge.chrRom = bin->data;
+  cartridge.prgRom = bin->data + 16;
+  cartridge.chrRom = bin->data + 16 + 16384;
 
   if (header.containsPrgRam) {
     io_panic("PRG RAM unsupported.");

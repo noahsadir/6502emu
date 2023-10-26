@@ -43,8 +43,14 @@
 
 // Remove any I/O-dependent operations from binary
 #define SUPPRESS_EXTIO  FALSE
+
+// Remove dependencies to unistd.h and sys/time.h
 #define SUPPRESS_TIMING FALSE
+
+// Remove dependencies on 64-bit values
 #define SUPPRESS_64BIT  FALSE
+
+// Always prefer space-efficient solutions vs time-efficient
 #define MINIMIZE_MEMORY FALSE
 
 #include <stdint.h>

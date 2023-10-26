@@ -43,6 +43,7 @@ void mos6502_init(void(*w)(uint16_t, uint8_t), uint8_t(*r)(uint16_t)) {
 void mos6502_step(char* traceStr, void(*c)(uint8_t)) {
   Bytecode* bytecode = NULL;
   if (CONFIG_CPU.shouldCacheInstructions && !MINIMIZE_MEMORY) {
+    // ~20% performance savings observed w/ caching
     if (!prgBytecode.cacheMap[reg.pc]) {
       static Bytecode bc;
       bytecode = &bc;
@@ -133,25 +134,25 @@ force_inline void mos6502_stack_push(uint8_t data) {
   reg.s -= 1;
 }
 
-force_inline uint8_t mos6502_stack_pop() {
+force_inline uint8_t mos6502_stack_pop(void) {
   reg.s += 1;
   uint8_t val = memRead(0x0100 + (uint16_t)reg.s);
   return val;
 }
 
-void mos6502_interrupt_nmi() {
+void mos6502_interrupt_nmi(void) {
   mos6502_stack_push((uint8_t)(reg.pc >> 8));
   mos6502_stack_push((uint8_t)(reg.pc));
   mos6502_stack_push(reg.p & ~CPUSTAT_BREAK);
   reg.pc = mos6502_read16(0xFFFA);
 }
 
-void mos6502_interrupt_reset() {
+void mos6502_interrupt_reset(void) {
   reg.s = 0xFD;
   reg.pc = mos6502_read16(0xFFFC);
 }
 
-void mos6502_interrupt_irq() {
+void mos6502_interrupt_irq(void) {
   mos6502_stack_push((uint8_t)(reg.pc >> 8));
   mos6502_stack_push((uint8_t)(reg.pc));
   mos6502_stack_push(reg.p & ~CPUSTAT_BREAK);
@@ -1063,7 +1064,7 @@ force_inline uint8_t mos6502_execute(Bytecode* bytecode) {
   return cycles;
 }
 
-void mos6502_configureTables() {
+void mos6502_configureTables(void) {
   mnemonicTable[0x00] = I_BRK;
   mnemonicTable[0x01] = I_ORA;
   mnemonicTable[0x02] = I_ILL_JAM;

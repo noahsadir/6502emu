@@ -92,6 +92,7 @@ typedef struct {
   uint8_t scrollX;
   uint8_t scrollY;
   uint16_t loadedAddr;
+  uint8_t ppuDataBuffer;
 } PPURegisters;
 
 static const uint32_t colors[64] =
@@ -112,10 +113,11 @@ extern uint8_t oam[256];
 
 void nesppu_init(INES* ines);
 void nesppu_step(uint16_t cycles, void(*invoke_nmi)(void));
-void nesppu_drawFrame();
-void nesppu_drawTableText();
-void nesppu_drawDebugData();
-void nesppu_configurePatternLookup();
+void nesppu_drawBackground(void);
+void nesppu_drawSprites(bool hasPriority);
+void nesppu_drawTableText(void);
+void nesppu_drawDebugData(void);
+void nesppu_configurePatternLookup(void);
 void nesppu_drawFromPatternTableDebug(uint16_t id, uint16_t bankOffset, uint8_t paletteIndex, uint16_t x, uint16_t y);
 void nesppu_drawFromPatternTable(uint16_t id, uint16_t bankOffset, uint8_t paletteIndex, uint16_t x, uint16_t y);
 void nesppu_drawOutlinedSquare(uint32_t color, uint8_t size, uint8_t x, uint8_t y);

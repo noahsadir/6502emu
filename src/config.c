@@ -44,7 +44,7 @@ bool config_init(char* path) {
   }
 }
 
-void config_print() {
+void config_print(void) {
 #if (!SUPPRESS_EXTIO)
   printf("\nPLATFORM: ");
   if (CONFIG_PLATFORM == EMU_PLAT_NES) {
@@ -124,7 +124,7 @@ void config_trimWhitespace(char** strPtr) {
   *strPtr = newStr;
 }
 
-void config_throwInvalidConfig() {
+void config_throwInvalidConfig(void) {
 #if (!SUPPRESS_EXTIO)
   printf("CONFIGURATION ERROR: Invalid config file\n");
 #endif

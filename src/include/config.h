@@ -149,11 +149,11 @@ extern CpuConfig CONFIG_CPU;
 extern DebugConfig CONFIG_DEBUG;
 
 bool config_init(char* json);
-void config_print();
+void config_print(void);
 void config_trimWhitespace(char** str);
 void config_parseSetting(char* line);
 bool config_boolFromString(char* arg, char* val);
-void config_throwInvalidConfig();
+void config_throwInvalidConfig(void);
 void config_throwInvalidConfigArg(char* arg);
 void config_throwInvalidConfigVal(char* arg, char* val);
 

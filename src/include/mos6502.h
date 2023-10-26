@@ -155,6 +155,7 @@ typedef struct {
   uint8_t p;
 } CPURegisters;
 
+// Easy-to-interpret representation of a 6502 instruction
 typedef struct {
   CPUMnemonic mnemonic;
   CPUAddressingMode addressingMode;
@@ -162,6 +163,7 @@ typedef struct {
   uint8_t data[3];
 } Bytecode;
 
+// Used for caching instructions
 typedef struct {
   Bytecode bytecodes[65536];
   uint16_t addrMap[65536];
@@ -171,40 +173,73 @@ typedef struct {
 
 extern CPURegisters reg;
 
+/**
+ * Initialize the CPU.
+ * 
+ * @param w the function to call for memory writes
+ *          - Parameter 1 (uint16_t): the addr to perform the write
+ *          - Parameter 2 (uint8_t): the data to write
+ * @param r the function to call for memory reads
+ *          - Parameter 1 (uint16_t): the addr to perform the read
+ *          - Return (uint8_t): the data stored at the address
+ */
 void mos6502_init(void(*w)(uint16_t, uint8_t), uint8_t(*r)(uint16_t));
+
+/**
+ * Execute an instruction.
+ * 
+ * @param traceStr the location to write the instruction trace. Ignored if NULL
+ *                 NOTE: Ensure that ample space is allocated. 128 bytes recommended.
+ * @param c the function to call after the instruction is executed.
+ *          - Contains a single uint8_t parameter containing the # of cycles elapsed
+ */
 void mos6502_step(char* traceStr, void(*c)(uint8_t));
-void mos6502_interrupt_reset();
-void mos6502_interrupt_nmi();
-void mos6502_interrupt_irq();
-force_inline void mos6502_setflag(CPUStatusFlag flag, uint8_t value);
-force_inline uint8_t mos6502_getflag(CPUStatusFlag flag);
-force_inline void mos6502_stack_push(uint8_t data);
-force_inline uint8_t mos6502_stack_pop();
-force_inline uint16_t mos6502_read16(uint16_t addr);
-force_inline uint8_t mos6502_execute(Bytecode* bytecode);
-force_inline uint16_t mos6502_fetchValue(Bytecode* bytecode);
+
+/**
+ * @brief Perform a reset. 
+ */
+void mos6502_interrupt_reset(void);
+
+/**
+ * @brief Perform a non-maskable interrupt (NMI).
+ */
+void mos6502_interrupt_nmi(void);
+
+/**
+ * @brief Perform an IRQ interrupt.
+ */
+void mos6502_interrupt_irq(void);
+
+/**
+ * @brief Generate a CPU trace for an instruction.
+ *        NOTE: Requires EXTIO
+ * @param traceStr The location for which the output will be stored.
+ *                 NOTE: Ensure that ample space is allocated. 128 bytes recommended.
+ * @param asmStr The assembly code of the instruction
+ * @param bytecode A pointer to the bytecode of the instruction
+ */
 void mos6502_generateTrace(char* traceStr, char* asmStr, Bytecode* bytecode);
 
 /**
- * @brief Decode an instruction and translate into bytecode
- * 
- * @param bytecode pointer to the Bytecode struct storing the software-friendly
- *                 translation of the instruction. Pass in NULL to disable.
- * @param assemblyResult pointer to string storing the assembly translated
- *                       from machine code. Pass in NULL to disable.
- * @param byteCount pointer to int storing number of bytes used by the
- *                  instruction. Pass in NULL to disable.
- * @param pc the location of the instruction in memory
- */
-force_inline void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc);
-
-/**
- * Non-inlined function for external calls to mos6502_decode()
+ * @brief Non-inlined function for external calls to mos6502_decode()
  */
 void mos6502_decode_external_wrapper(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc);
+
 /**
  * @brief Configure tables for translating opcodes
  */
-void mos6502_configureTables();
+void mos6502_configureTables(void);
+
+// INLINED FUNCTIONS -- should not be called outside of mos6502.c
+// These are called millions of times per second, so they are inlined
+// to avoid performance hits related to stack buildup/teardown
+force_inline void mos6502_decode(Bytecode* bytecode, char* assemblyResult, uint8_t* byteCount, uint16_t pc);
+force_inline void mos6502_setflag(CPUStatusFlag flag, uint8_t value);
+force_inline uint8_t mos6502_getflag(CPUStatusFlag flag);
+force_inline void mos6502_stack_push(uint8_t data);
+force_inline uint8_t mos6502_stack_pop(void);
+force_inline uint16_t mos6502_read16(uint16_t addr);
+force_inline uint8_t mos6502_execute(Bytecode* bytecode);
+force_inline uint16_t mos6502_fetchValue(Bytecode* bytecode);
 
 #endif
