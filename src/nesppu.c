@@ -23,6 +23,7 @@ PPURegisters ppureg;
 uint8_t ppuMemoryMap[0x4000];
 uint8_t patternTable[512][64];
 uint8_t nametable[4][960];
+uint8_t visibleBackground[61440];
 uint8_t attrTable[4][64];
 uint8_t* paletteTable = ppuMemoryMap + 0x3F00;
 uint8_t oam[256];
@@ -112,9 +113,9 @@ void nesppu_drawSprites(bool hasPriority) {
     uint8_t paletteIndex = byte2 & 0x3;
     bool flipVertical = byte2 & BIT_MASK_8;
     bool flipHorizontal = byte2 & BIT_MASK_7;
-    bool priority = byte2 & BIT_MASK_6;
+    bool priority = !(byte2 & BIT_MASK_6);
 
-    if (y >= 0xEF && hasPriority == priority) continue;
+    if (y >= 0xEF) continue;
 
     for (int i = 0; i < 64; i++) {
       int row = flipVertical ? 7 - (i / 8) : (i / 8);
@@ -122,7 +123,12 @@ void nesppu_drawSprites(bool hasPriority) {
       uint32_t pos = (y * 256) + (row * 256) + x + col;
       if ((x + col) >= 248 || (y + row) >= 232) continue;
       uint8_t color = patternTable[tileId + bankOffset][i];
-      if (color != 0) {
+
+      // only draw sprite pixel if:
+      // - pixel is not transparent (0)
+      // - in front of background ~OR~ behind but background pixel is 0
+      uint8_t nametablePixelVal = visibleBackground[pos];
+      if (color != 0 && (priority || nametablePixelVal == 0)) {
         BITMAP0[pos] = colors[paletteTable[(paletteIndex * 4) + color + 0x10]];
       }
     }
@@ -131,12 +137,11 @@ void nesppu_drawSprites(bool hasPriority) {
 
 void nesppu_drawBackground(void) {
   uint16_t bankOffset = GET_ppuctrl_backgroundpattern(ppureg.ppuctrl) ? 256 : 0;
-  for (int r = 0; r < 30; r++) {
-    for (int c = 0; c < 32; c++) {
-      // TODO: account for scrolling
-      // This currently renders nametable 0 only
-      // ensure nametable/attrtable selection wraps with scroll
+  for (int r = 0; r < 31; r++) {
+    for (int c = 0; c < 33; c++) {
+      // Account for scroll when picking nametable tile
       uint16_t baseNametable = GET_ppuctrl_nametable(scanlineReg[r * 8].ppuctrl);
+      // use scanlineReg since registers may have changed mid-render
       int coarseScrollX = scanlineReg[r * 8].scrollX / 8;
       int coarseScrollY = scanlineReg[r * 8].scrollY / 8;
       int fineScrollX = scanlineReg[r * 8].scrollX % 8;
@@ -147,11 +152,12 @@ void nesppu_drawBackground(void) {
 
       int ntId = baseNametable;
 
+      // if scroll-adjusted row or col goes "off the screen",
+      // overflow to next appropriate nametable
       if (row >= 30) {
         ntId = (ntId + 2) % 4;
         row -= 30;
       }
-
       if (col >= 32) {
         ntId = (ntId + 1) % 4;
         col -= 32;
@@ -163,8 +169,7 @@ void nesppu_drawBackground(void) {
       uint8_t attrCol = (col % 4) / 2;
       uint8_t attrShift = ((attrRow * 2) + attrCol) * 2;
       attrByte = (attrByte >> attrShift) & 3;
-
-      nesppu_drawFromPatternTable(nametable[ntId][(row * 32) + col], bankOffset, attrByte, (c * 8) - fineScrollX, (r * 8) - fineScrollY);
+      nesppu_drawBkgTileFromPatternTable(nametable[ntId][(row * 32) + col], bankOffset, attrByte, (c * 8) - fineScrollX, (r * 8) - fineScrollY);
     }
   }
 
@@ -192,13 +197,16 @@ uint8_t nesppu_read(uint16_t addr) {
   return ppuMemoryMap[addr];
 }
 
-void nesppu_drawFromPatternTable(uint16_t id, uint16_t bankOffset, uint8_t paletteIndex, uint16_t x, uint16_t y) {
+void nesppu_drawBkgTileFromPatternTable(uint16_t id, uint16_t bankOffset, uint8_t paletteIndex, int16_t x, int16_t y) {
   // draw a full-size tile in BITMAP0
   for (int i = 0; i < 64; i++) {
-    uint32_t pos = (y * 256) + ((i / 8) * 256) + ((x + (i % 8)) % 256);
-    if ((pos % 256) >= 248 || (pos / 256) >= 232) continue;
+    // ignore pixel if OOB
+    if (x + (i % 8) < 0 || y + (i / 8) < 0 || x + (i % 8) >= 256 || y + (i / 8) >= 240) continue;
+
+    uint32_t pos = (y * 256) + ((i / 8) * 256) + (x + (i % 8));
     uint8_t color = patternTable[id + bankOffset][i];
     BITMAP0[pos] = (color == 0) ? colors[paletteTable[0]] : colors[paletteTable[(paletteIndex * 4) + color]];
+    visibleBackground[pos] = color;
   }
 }
 
