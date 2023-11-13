@@ -53,6 +53,8 @@
 // Always prefer space-efficient solutions vs time-efficient
 #define MINIMIZE_MEMORY FALSE
 
+#define PERFORMANCE_UPDATES_PER_SEC 60
+
 #include <stdint.h>
 #include <string.h>
 

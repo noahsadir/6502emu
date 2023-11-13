@@ -30,6 +30,9 @@
 #ifndef NESPPU_H
 #define NESPPU_H
 
+#define PPU_FRAME_CYCLES 89342
+#define DISPLAY_PIXELS 61440
+
 #include "global.h"
 #include "config.h"
 #include "io.h"
@@ -91,6 +94,7 @@ typedef struct {
   bool addrLatch;
   uint8_t scrollX;
   uint8_t scrollY;
+  uint8_t scrollNT;
   uint16_t loadedAddr;
   uint8_t ppuDataBuffer;
 } PPURegisters;

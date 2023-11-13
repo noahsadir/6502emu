@@ -74,7 +74,7 @@ void nes_start(void) {
     }
 
     // update metrics every second
-    if (intervals == INTERVALS_PER_SEC) {
+    if (intervals == INTERVALS_PER_SEC / PERFORMANCE_UPDATES_PER_SEC) {
       nes_generateMetrics(outputStr);
       realFreq = 0;
       intervals = 0;
@@ -190,6 +190,7 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
     addr = 0x2000 + (addr % 0x08);
     if (addr == 0x2000) {
       ppureg.ppuctrl = data;
+      ppureg.scrollNT = GET_ppuctrl_nametable(ppureg.ppuctrl);
     } else if (addr == 0x2001) {
       ppureg.ppumask = data;
     } else if (addr == 0x2002) {
@@ -219,6 +220,12 @@ void nes_cpuWrite(uint16_t addr, uint8_t data) {
       }
       ppureg.ppuaddr = data;
       ppureg.addrLatch = !ppureg.addrLatch;
+
+      // writes to 0x2006 will overwrite scroll data
+      // while zeroing out is not a perfect emulation, it seems acceptable
+      ppureg.scrollX = 0;
+      ppureg.scrollY = 0;
+      ppureg.scrollNT = 0;
     } else if (addr == 0x2007) {
       nesppu_write(ppureg.loadedAddr & 0x3FFF, data);
       ppureg.loadedAddr += (GET_ppuctrl_vraminc(ppureg.ppuctrl) ? 32 : 1);
@@ -286,15 +293,15 @@ void nes_generateMetrics(char* outputStr) {
     if (CONFIG_DEBUG.shouldDisplayPerformance) {
       outputStr[0] = '\0';
       char perfString[128];
-      sprintf(perfString, "%.6f MHz\n\n", (double)realFreq / 1000000.0);
+      sprintf(perfString, "%.6f MHz\n\n", (double)(realFreq * PERFORMANCE_UPDATES_PER_SEC) / 1000000.0);
       char regString[256];
       sprintf(regString, 
-        "CPU\n----\n A: %02X\n X: %02X\n Y: %02X\n S: %02X\n P: %02X\nPC: %04X\n\nPPU\n----\n         VPHBSINN\nPPUCTRL: %d%d%d%d%d%d%d%d\n\n         BGRsbMmG\nPPUMASK: %d%d%d%d%d%d%d%d\n\n         VSO\nPPUSTAT: %d%d%d\n\nPPUADDR: %04X\nOAMADDR: %02X\nSCRLL-X: %03d\nSCRLL-Y: %03d",
+        "CPU\n----\n A: %02X\n X: %02X\n Y: %02X\n S: %02X\n P: %02X\nPC: %04X\n\nPPU\n----\n         VPHBSINN\nPPUCTRL: %d%d%d%d%d%d%d%d\n\n         BGRsbMmG\nPPUMASK: %d%d%d%d%d%d%d%d\n\n         VSO\nPPUSTAT: %d%d%d\n\nPPUADDR: %04X\nOAMADDR: %02X\nSCRLL-X: %03d\nSCRLL-Y: %03d\nSCRLL-N: %03d",
         reg.a, reg.x, reg.y, reg.s, reg.p, reg.pc,
         GET_bit7(ppureg.ppuctrl), GET_bit6(ppureg.ppuctrl), GET_bit5(ppureg.ppuctrl), GET_bit4(ppureg.ppuctrl), GET_bit3(ppureg.ppuctrl), GET_bit2(ppureg.ppuctrl), GET_bit1(ppureg.ppuctrl), GET_bit0(ppureg.ppuctrl),
         GET_bit7(ppureg.ppumask), GET_bit6(ppureg.ppumask), GET_bit5(ppureg.ppumask), GET_bit4(ppureg.ppumask), GET_bit3(ppureg.ppumask), GET_bit2(ppureg.ppumask), GET_bit1(ppureg.ppumask), GET_bit0(ppureg.ppumask),
         GET_bit7(ppureg.ppustatus), GET_bit6(ppureg.ppustatus), GET_bit5(ppureg.ppustatus),
-        ppureg.loadedAddr, ppureg.oamaddr, ppureg.scrollX, ppureg.scrollY
+        ppureg.loadedAddr, ppureg.oamaddr, ppureg.scrollX, ppureg.scrollY, ppureg.scrollNT
       );
 
       if (CONFIG_DEBUG.shouldDisplayPerformance) {

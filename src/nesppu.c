@@ -4,6 +4,7 @@
  * @author Noah Sadir
  * @date 2023-09-28
  */
+
 /*
 TODO:
 [*] Reading/writing PPU memory
@@ -14,7 +15,8 @@ TODO:
 [*] Render background
 [*] Render sprites
 [*] Sprite 0 hit
-[~] Scrolling
+[*] Basic scrolling
+[*] Mid-frame scroll switch
 */
 #include "include/nesppu.h"
 
@@ -23,7 +25,7 @@ PPURegisters ppureg;
 uint8_t ppuMemoryMap[0x4000];
 uint8_t patternTable[512][64];
 uint8_t nametable[4][960];
-uint8_t visibleBackground[61440];
+uint8_t visibleBackground[DISPLAY_PIXELS];
 uint8_t attrTable[4][64];
 uint8_t* paletteTable = ppuMemoryMap + 0x3F00;
 uint8_t oam[256];
@@ -59,12 +61,11 @@ void nesppu_init(INES* ines) {
 void nesppu_step(uint16_t cycles, void(*invoke_nmi)(void)) {
   for (int i = 0; i < cycles; i++) {
     // increment cycle count or reset from beginning
-    cycleCount = (cycleCount > 89342) ? 0 : cycleCount + 1;
+    cycleCount = (cycleCount > PPU_FRAME_CYCLES) ? 0 : cycleCount + 1;
     uint16_t scanline = cycleCount / 341;
     uint8_t spriteZeroY = oam[0];
     if (lastScanline == scanline) continue; // only run code below once per scanline
     scanlineReg[scanline] = ppureg;
-    //printf("%d: %d\n", scanline, GET_ppuctrl_nametable(ppureg.ppuctrl));
 
     if (scanline == 0) {
       didGenerateNmi = false;
@@ -73,7 +74,6 @@ void nesppu_step(uint16_t cycles, void(*invoke_nmi)(void)) {
     }
     
     if (scanline < 241) {
-      // probably check for sprite zero, render sprites maybe?
       if (spriteZeroY == scanline) {
         ppureg.ppustatus = SET_ppustat_spritezerohit(ppureg.ppustatus, 1);
       }
@@ -121,7 +121,10 @@ void nesppu_drawSprites(bool hasPriority) {
       int row = flipVertical ? 7 - (i / 8) : (i / 8);
       int col = flipHorizontal ? 7 - (i % 8) : (i % 8);
       uint32_t pos = (y * 256) + (row * 256) + x + col;
-      if ((x + col) >= 248 || (y + row) >= 232) continue;
+
+      // ensure pixel is within screen bounds
+      if ((x + col) >= 256 || (y + row) >= 240) continue;
+
       uint8_t color = patternTable[tileId + bankOffset][i];
 
       // only draw sprite pixel if:
@@ -140,7 +143,7 @@ void nesppu_drawBackground(void) {
   for (int r = 0; r < 31; r++) {
     for (int c = 0; c < 33; c++) {
       // Account for scroll when picking nametable tile
-      uint16_t baseNametable = GET_ppuctrl_nametable(scanlineReg[r * 8].ppuctrl);
+      uint16_t baseNametable = GET_ppuctrl_nametable(scanlineReg[r * 8].scrollNT);
       // use scanlineReg since registers may have changed mid-render
       int coarseScrollX = scanlineReg[r * 8].scrollX / 8;
       int coarseScrollY = scanlineReg[r * 8].scrollY / 8;
@@ -297,7 +300,7 @@ void nesppu_drawDebugData(void) {
   // nametable colors are inverted by default on debug screen
   // if pixel is currently visible, show as un-inverted
   for (int i = 0; i < 120; i++) {
-    uint8_t baseNametable = GET_ppuctrl_nametable(scanlineReg[i * 2].ppuctrl);
+    uint8_t baseNametable = GET_ppuctrl_nametable(scanlineReg[i * 2].scrollNT);
     uint8_t scrollX = scanlineReg[i * 2].scrollX / 2;
     uint8_t scrollY = scanlineReg[i * 2].scrollY / 2;
     uint8_t scrollXPos = scrollX + ((baseNametable == 1 || baseNametable == 3) ? 128 : 0);

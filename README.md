@@ -77,8 +77,8 @@ Takes in a pointer to a write and read function with the following properties:
 
 `void mos6502_step(char* traceStr, void(*c)(uint8_t))`
 
-Execute an instruction. More specifically, read in an instruction from memory
-at the current PC value using the functions passed during `mos6502_init`.
+Read in an instruction from memory at the current PC value using the
+functions passed during `mos6502_init`.
 
 Takes in an optional trace string and mandatory callback.
 
